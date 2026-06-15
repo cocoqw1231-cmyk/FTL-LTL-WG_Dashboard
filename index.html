@@ -511,20 +511,14 @@ select:focus,input:focus{border-color:var(--b2)}
 
     <!-- Ship To -->
     <div class="bol-form-card">
-      <div class="form-title" style="color:var(--hou-t)">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        Ship To (First HUB Stop)
+      <div class="form-title" style="color:var(--hou-t);display:flex;justify-content:space-between;align-items:center">
+        <span style="display:flex;align-items:center;gap:7px">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Ship To — HUB Stops
+        </span>
+        <button class="add-row-btn" onclick="addHubStop()" style="border-color:var(--hou-t);color:var(--hou-t)">+ Add HUB Stop</button>
       </div>
-      <div class="form-grid form-grid-2">
-        <div class="field"><label>HUB Code</label><input id="b-hub-code" placeholder="e.g. U192"></div>
-        <div class="field"><label>HUB Name</label><input id="b-hub-name" placeholder="e.g. 192 Commerce"></div>
-      </div>
-      <div class="form-grid form-grid-3" style="margin-top:10px">
-        <div class="field"><label>Address</label><input id="b-hub-addr" placeholder="Street address"></div>
-        <div class="field"><label>City</label><input id="b-hub-city" placeholder="City"></div>
-        <div class="field"><label>State / ZIP</label><input id="b-hub-sz" placeholder="CA 90040"></div>
-      </div>
-      <div class="field" style="margin-top:10px"><label>Contact at HUB</label><input id="b-hub-contact" placeholder="Name and phone"></div>
+      <div id="hub-stops-list"></div>
     </div>
 
     <!-- Freight / SKU table -->
@@ -2415,6 +2409,152 @@ renderTTStrip();
 updateHubFilter();
 renderDashboard();
 calcRate();
+
+
+// ── BOL Multi-HUB Stop System ────────────────────────────────────────────────
+var _hubStopN = 0;
+
+function addHubStop(data) {
+  data = data || {};
+  _hubStopN++;
+  var n = _hubStopN;
+  var isFirst = (n === 1);
+  var hubs = (typeof HUBS !== 'undefined') ? HUBS : {};
+
+  var block = document.createElement('div');
+  block.id = 'hub-stop-blk-' + n;
+  block.style.cssText = 'background:var(--bg3);border:1px solid var(--b1);border-radius:var(--rad-lg);padding:12px 14px;margin-bottom:10px;position:relative';
+
+  var removeBtn = isFirst ? '' :
+    '<button onclick="removeHubStop('+n+')" style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--danger-t);cursor:pointer;font-size:18px;line-height:1">×</button>';
+
+  block.innerHTML =
+    '<div style="font-size:11px;font-weight:600;color:var(--hou-t);margin-bottom:10px">Stop #'+n+'</div>'
+    + removeBtn
+    + '<div class="form-grid form-grid-2" style="margin-bottom:8px">'
+    +   '<div class="field"><label>HUB Code</label>'
+    +     '<div style="display:flex;gap:6px">'
+    +       '<input id="hs'+n+'-code" placeholder="e.g. U192" style="flex:1" value="'+(data.code||'')+'" oninput="autoFillHubStop('+n+')">'
+    +       '<button class="btn" style="padding:4px 10px;font-size:11px;flex-shrink:0" onclick="autoFillHubStop('+n+')">Auto-fill</button>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="field"><label>HUB Name</label><input id="hs'+n+'-name" placeholder="192 Commerce" value="'+(data.name||'')+'"></div>'
+    + '</div>'
+    + '<div class="form-grid form-grid-3" style="margin-bottom:8px">'
+    +   '<div class="field"><label>Address</label><input id="hs'+n+'-addr" placeholder="Street address" value="'+(data.addr||'')+'"></div>'
+    +   '<div class="field"><label>City</label><input id="hs'+n+'-city" placeholder="City" value="'+(data.city||'')+'"></div>'
+    +   '<div class="field"><label>State / ZIP</label><input id="hs'+n+'-sz" placeholder="CA 90040" value="'+(data.sz||'')+'"></div>'
+    + '</div>'
+    + '<div class="form-grid form-grid-2">'
+    +   '<div class="field"><label>Contact at HUB</label><input id="hs'+n+'-contact" placeholder="Name and phone" value="'+(data.contact||'')+'"></div>'
+    +   '<div class="field"><label>Appt Window</label><input id="hs'+n+'-appt" placeholder="08:00 – 17:00" value="'+(data.appt||'08:00 – 17:00')+'"></div>'
+    + '</div>';
+
+  document.getElementById('hub-stops-list').appendChild(block);
+}
+
+function removeHubStop(n) {
+  var el = document.getElementById('hub-stop-blk-'+n);
+  if (el) el.remove();
+}
+
+function autoFillHubStop(n) {
+  var codeEl = document.getElementById('hs'+n+'-code');
+  if (!codeEl) return;
+  var code = codeEl.value.trim().toUpperCase();
+  var hubs = (typeof HUBS !== 'undefined') ? HUBS : {};
+  var h = hubs[code];
+  if (!h) return;
+  var sv = function(id, v) { var e=document.getElementById(id); if(e) e.value=v||''; };
+  sv('hs'+n+'-name',    h.name  || '');
+  sv('hs'+n+'-addr',    h.name  || '');
+  sv('hs'+n+'-city',    h.city  || '');
+  sv('hs'+n+'-sz',      (h.state||'') + ' ' + (h.zip||''));
+  sv('hs'+n+'-contact', h.phone || '');
+}
+
+function getHubStops() {
+  var stops = [];
+  var n = 1;
+  while (document.getElementById('hub-stop-blk-'+n)) {
+    var gv = function(id){ return (document.getElementById(id)||{}).value||''; };
+    stops.push({
+      stop:    n,
+      code:    gv('hs'+n+'-code'),
+      name:    gv('hs'+n+'-name'),
+      addr:    gv('hs'+n+'-addr'),
+      city:    gv('hs'+n+'-city'),
+      sz:      gv('hs'+n+'-sz'),
+      contact: gv('hs'+n+'-contact'),
+      appt:    gv('hs'+n+'-appt'),
+    });
+    n++;
+  }
+  return stops;
+}
+
+// Auto-populate stops when a truck BOL is opened
+var _bolOrigOpenBOL = (typeof openBOLforTruck === 'function') ? openBOLforTruck : null;
+openBOLforTruck = function(truckId, btn) {
+  if (_bolOrigOpenBOL) _bolOrigOpenBOL(truckId, btn);
+  var list = document.getElementById('hub-stops-list');
+  if (!list) return;
+  list.innerHTML = '';
+  _hubStopN = 0;
+  var t = (typeof TRUCKS !== 'undefined') ? TRUCKS.find(function(x){return x.id===truckId;}) : null;
+  if (!t || !t.stops || !t.stops.length) { addHubStop(); return; }
+  t.stops.forEach(function(s) {
+    addHubStop({
+      code: s.id, name: s.name,
+      addr: s.name, city: s.city,
+      sz: (s.state||'') + ' ' + (s.zip||''),
+      contact: '', appt: '08:00 – 17:00'
+    });
+  });
+};
+
+// Patch renderBOLHTML to print all HUB stops
+var _origRenderBOL = (typeof renderBOLHTML === 'function') ? renderBOLHTML : null;
+renderBOLHTML = function() {
+  var base = _origRenderBOL ? _origRenderBOL() : '';
+  var stops = getHubStops();
+  if (!stops.length) return base;
+  // Build multi-stop table rows
+  var rows = stops.map(function(s) {
+    return '<tr>'
+      + '<td style="padding:5px 8px;border-bottom:1px solid #ddd;font-weight:600;color:#1F3864">Stop #'+s.stop+'</td>'
+      + '<td style="padding:5px 8px;border-bottom:1px solid #ddd"><b>'+s.code+'</b> – '+s.name+'</td>'
+      + '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+s.addr+', '+s.city+' '+s.sz+'</td>'
+      + '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+s.contact+'</td>'
+      + '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+s.appt+'</td>'
+      + '</tr>';
+  }).join('');
+  var stopTable = '<div style="margin-bottom:10px">'
+    + '<div style="background:#1F3864;color:#fff;font-weight:700;padding:4px 8px;font-size:10px">SHIP TO — HUB STOPS ('+stops.length+')</div>'
+    + '<table style="width:100%;border:1px solid #000;border-top:none;border-collapse:collapse;font-size:11px">'
+    + '<thead><tr style="background:#f5f5f5">'
+    +   '<th style="padding:4px 8px;border:1px solid #ddd;text-align:left">Stop</th>'
+    +   '<th style="padding:4px 8px;border:1px solid #ddd;text-align:left">HUB</th>'
+    +   '<th style="padding:4px 8px;border:1px solid #ddd;text-align:left">Address</th>'
+    +   '<th style="padding:4px 8px;border:1px solid #ddd;text-align:left">Contact</th>'
+    +   '<th style="padding:4px 8px;border:1px solid #ddd;text-align:left">Appt</th>'
+    + '</tr></thead>'
+    + '<tbody>'+rows+'</tbody>'
+    + '</table></div>';
+  // Replace old single Ship To block in printed HTML
+  return base.replace(/SHIP TO \(HUB\)[\s\S]*?<\/table>\s*<\/div>/, stopTable);
+};
+
+// Init: add first stop on page load
+document.addEventListener('DOMContentLoaded', function() {
+  var list = document.getElementById('hub-stops-list');
+  if (list && list.children.length === 0) addHubStop();
+});
+// Also run now in case DOM already loaded
+(function(){
+  var list = document.getElementById('hub-stops-list');
+  if (list && list.children.length === 0) addHubStop();
+})();
 
 </script>
 </body>
