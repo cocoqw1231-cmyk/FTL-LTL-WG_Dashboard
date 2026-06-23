@@ -534,13 +534,13 @@ select:focus,input:focus{border-color:var(--b2)}
         </tr></thead>
         <tbody id="sku-tbody">
           <tr>
-            <td><input placeholder="Order #"></td>
-            <td><input placeholder="0" style="width:50px"></td>
-            <td><input placeholder="0" style="width:70px"></td>
-            <td><input placeholder="P/S" style="width:50px"></td>
-            <td><input placeholder="SKU-XXXXX"></td>
-            <td><input placeholder="Product description"></td>
-            <td><input placeholder="1" style="width:40px"></td>
+            <td><input title="Customer Order #" placeholder="Order #" name="order-num"></td>
+            <td><input title="Number of packages" placeholder="0" name="pkgs" style="width:50px"></td>
+            <td><input title="Weight (lbs)" placeholder="0" name="weight" style="width:70px"></td>
+            <td><input title="Pallet or Slip" placeholder="P/S" name="pallet-slip" style="width:50px"></td>
+            <td><input title="SKU" placeholder="SKU-XXXXX" name="sku"></td>
+            <td><input title="Product description" placeholder="Product description" name="description"></td>
+            <td><input title="Quantity" placeholder="1" name="qty" style="width:40px"></td>
             <td><button onclick="removeRow(this)" style="background:none;border:none;color:var(--danger-t);cursor:pointer;font-size:16px;line-height:1">×</button></td>
           </tr>
         </tbody>
@@ -624,11 +624,11 @@ select:focus,input:focus{border-color:var(--b2)}
         <thead><tr><th>#PKGS</th><th>Weight</th><th>Description</th><th>SKU</th><th>QTY</th><th></th></tr></thead>
         <tbody id="daf-tbody">
           <tr>
-            <td><input placeholder="0" style="width:50px"></td>
-            <td><input placeholder="0 lbs" style="width:70px"></td>
-            <td><input placeholder="Product name"></td>
-            <td><input placeholder="SKU-XXXXX"></td>
-            <td><input placeholder="1" style="width:40px"></td>
+            <td><input title="Number of packages" placeholder="0" name="daf-pkgs" style="width:50px"></td>
+            <td><input title="Weight (lbs)" placeholder="0 lbs" name="daf-weight" style="width:70px"></td>
+            <td><input title="Product name" placeholder="Product name" name="daf-desc"></td>
+            <td><input title="SKU" placeholder="SKU-XXXXX" name="daf-sku"></td>
+            <td><input title="Quantity" placeholder="1" name="daf-qty" style="width:40px"></td>
             <td><button onclick="removeRow(this)" style="background:none;border:none;color:var(--danger-t);cursor:pointer;font-size:14px">×</button></td>
           </tr>
         </tbody>
@@ -1042,6 +1042,120 @@ select:focus,input:focus{border-color:var(--b2)}
   <div class="modal">
     <div class="modal-title">Bulk Status Update <button class="modal-close" onclick="closeModal('bulk-modal')">×</button></div>
 
+<!-- RFQ Preview Modal -->
+<div class="modal-overlay hidden" id="rfq-modal">
+  <div class="modal" style="width:720px;max-width:95vw;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">
+      <span>📄 Carrier RFQ Preview</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-green" onclick="exportRFQfromModal()" style="font-size:11px">⬇ Export PDF</button>
+        <button class="modal-close" onclick="document.getElementById('rfq-modal').classList.add('hidden')">×</button>
+      </div>
+    </div>
+    <div id="rfq-preview-content" style="font-size:12px;color:var(--t1)"></div>
+  </div>
+</div>
+
+<!-- Quote Entry Modal -->
+<div class="modal-overlay hidden" id="quote-entry-modal">
+  <div class="modal" style="width:580px;max-width:96vw">
+    <div class="modal-title">
+      ✏️ Enter Carrier Quote — <span id="qe-truck-label" style="color:var(--accent-t)"></span>
+      <button class="modal-close" onclick="document.getElementById('quote-entry-modal').classList.add('hidden')">×</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="field">
+        <label>Carrier / Company Name</label>
+        <input id="qe-carrier" placeholder="e.g. XYZ Freight LLC">
+      </div>
+      <div class="field">
+        <label>MC Number</label>
+        <input id="qe-mc" placeholder="MC-XXXXXX">
+      </div>
+      <div class="field">
+        <label>Contact Name</label>
+        <input id="qe-contact" placeholder="Full name">
+      </div>
+      <div class="field">
+        <label>Phone / Email</label>
+        <input id="qe-phone" placeholder="555-000-0000">
+      </div>
+    </div>
+
+    <div style="background:var(--warn-bg);border:1px solid var(--warn);border-radius:var(--rad-lg);padding:12px 16px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--warn-t);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Quoted Rate</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="field">
+          <label>Rate ($/mi all-in)</label>
+          <input id="qe-rate" placeholder="2.85" type="number" step="0.01" oninput="calcQuoteTotal()">
+        </div>
+        <div class="field">
+          <label>Total Bid ($)</label>
+          <input id="qe-total" placeholder="Auto-calc" readonly style="background:var(--bg4);font-weight:600;color:var(--warn-t)">
+        </div>
+        <div class="field">
+          <label>Availability</label>
+          <select id="qe-avail">
+            <option value="Y">Y — Available</option>
+            <option value="N">N — Not available</option>
+            <option value="TBD">TBD — Pending</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Earliest Pickup Date</label>
+          <input id="qe-pickup" type="date">
+        </div>
+        <div class="field" style="grid-column:span 2">
+          <label>Carrier Notes</label>
+          <input id="qe-notes" placeholder="Any conditions, equipment details, etc.">
+        </div>
+      </div>
+    </div>
+
+    <div style="background:var(--bg3);border:1px solid var(--b1);border-radius:var(--rad-lg);padding:10px 14px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--t1);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Internal — Award Decision</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field">
+          <label>Decision</label>
+          <select id="qe-decision">
+            <option value="">-- Pending decision --</option>
+            <option value="Awarded">✅ Awarded</option>
+            <option value="Rejected">❌ Rejected</option>
+            <option value="Backup">⭐ Backup carrier</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Confirmed by (Z Gallerie)</label>
+          <input id="qe-confirmed-by" placeholder="Your name">
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="document.getElementById('quote-entry-modal').classList.add('hidden')">Cancel</button>
+      <button class="btn btn-wg" onclick="saveCarrierQuote()" style="font-size:13px;padding:7px 20px;font-weight:600">💾 Save Quote</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quotes List Modal -->
+<div class="modal-overlay hidden" id="quotes-list-modal">
+  <div class="modal" style="width:720px;max-width:96vw;max-height:88vh;overflow-y:auto">
+    <div class="modal-title">
+      📊 Carrier Quotes — <span id="ql-truck-label" style="color:var(--accent-t)"></span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-green" onclick="exportQuotesCSV()" style="font-size:11px">⬇ Export CSV</button>
+        <button class="modal-close" onclick="document.getElementById('quotes-list-modal').classList.add('hidden')">×</button>
+      </div>
+    </div>
+    <div id="quotes-list-content"></div>
+    <div style="margin-top:12px;text-align:center">
+      <button class="btn btn-wg" onclick="openQuoteEntryFromList()">+ Add Another Quote</button>
+    </div>
+  </div>
+</div>
+
 <script>
 
 const TRUCKS=[{"id":1,"wh":"LA","corridor":"LA-01 SoCal + NorCal","status":"DISPATCH","load_pct":100.0,"stops":[{"id":"U192","name":"192 Commerce","city":"Commerce","state":"CA","zip":"90040","orders":51,"units":51,"cbm":55.25,"cbm_true":40.28,"cbm_est":14.97,"lbs":7739.9,"third_man":13,"sample_orders":[{"id":"20089583","sku":"011657788","name":"monique rosenthal","city":"Tarzana","state":"California","zip":"91356","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20089560","sku":"044071788","name":"Mandy Marcinko","city":"Huntington Beach","state":"California","zip":"92648","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20089478","sku":"FSE90953-SAN-D","name":"Valentin Higuera","city":"Riverside","state":"California","zip":"92503","cbm":1.451,"cbm_src":"sku_DG","lbs":116.8,"warn":false,"lm_cost":130},{"id":"20089472","sku":"FSE90953-SAN-AB","name":"Diane Pagani","city":"Aliso Viejo","state":"California","zip":"92656","cbm":2.49,"cbm_src":"kit_CW","lbs":224.9,"warn":false,"lm_cost":130},{"id":"20089438","sku":"999509557","name":"Jessica Slater","city":"Westlake Village","state":"California","zip":"91362","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20089309","sku":"FSE90953-LGY-ABC","name":"LeTonia White","city":"Lakewood","state":"California","zip":"90712","cbm":3.934,"cbm_src":"kit_CW","lbs":317.4,"warn":true,"lm_cost":230}]}],"total_orders":51,"total_units":51,"total_cbm":55.246,"total_lbs":7739.9,"cbm_true":40.28,"cbm_est":14.97,"miles":13,"drive_h":0.2,"stop_h":2,"total_h":2.2,"days":1,"legs":[{"from":"WH","to":"Commerce","miles":13,"drive_hrs":0.2}],"hwy":["I-5","I-110","I-80"],"ftl_cost":36.21,"lm_cost":7930,"total_cost":7966.21,"cost_per_order":156.2,"rate_per_mi":2.8,"third_man":13,"wh_city":"Gardena CA","wh_lat":33.8978,"wh_lng":-118.2987,"route_notes":"LA-01 SoCal + NorCal · I-5 → I-110 → I-80","need_cbm":0},{"id":2,"wh":"LA","corridor":"LA-01 SoCal + NorCal","status":"DISPATCH","load_pct":96.5,"stops":[{"id":"U192","name":"192 Commerce","city":"Commerce","state":"CA","zip":"90040","orders":28,"units":29,"cbm":27.74,"cbm_true":16.33,"cbm_est":11.41,"lbs":3281.7,"third_man":5,"sample_orders":[{"id":"20082706","sku":"FAR16555-LBN","name":"Nune Simonian","city":"glendale","state":"California","zip":"91206","cbm":1.07,"cbm_src":"sku_DG","lbs":165.0,"warn":false,"lm_cost":130},{"id":"20082424","sku":"621000689","name":"Candy Heredia","city":"San Pedro","state":"California","zip":"90732","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20082281","sku":"013412019","name":"marisa stewart","city":"Los Angeles","state":"California","zip":"90067","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20081994","sku":"FSE90953-SAN-C","name":"Valentin Higuera","city":"Riverside","state":"California","zip":"92503","cbm":1.451,"cbm_src":"sku_DG","lbs":116.8,"warn":false,"lm_cost":130},{"id":"20081922","sku":"HRU14657-IVY","name":"Darren McBratney","city":"Los Angeles","state":"California","zip":"90017","cbm":0.172,"cbm_src":"sku_DG","lbs":82.5,"warn":false,"lm_cost":130},{"id":"20081812","sku":"FBD90881-IVY-AB-KG","name":"Nicholas Arndt","city":"Fillmore","state":"California","zip":"93015","cbm":2.054,"cbm_src":"kit_CW","lbs":326.9,"warn":true,"lm_cost":230}]},{"id":"U025","name":"025 Benicia","city":"Benicia","state":"CA","zip":"94510","orders":20,"units":22,"cbm":25.6,"cbm_true":18.83,"cbm_est":6.78,"lbs":3458.9,"third_man":5,"sample_orders":[{"id":"20088854","sku":"FBD90835-IVY-AB-KG","name":"Teena Bhatia","city":"Fremont","state":"California","zip":"94539","cbm":1.77,"cbm_src":"kit_CW","lbs":240.0,"warn":false,"lm_cost":130},{"id":"20088071","sku":"FSE90953-BLK-AB","name":"Robyn  A","city":"San Francisco","state":"California","zip":"94112","cbm":2.497,"cbm_src":"kit_CW","lbs":224.8,"warn":false,"lm_cost":130},{"id":"20087902","sku":"999509557","name":"Shannon Wheelehan","city":"Aptos","state":"California","zip":"95003","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20087878","sku":"FSE90953-LGY-AB","name":"Linda Melton","city":"Fresno","state":"California","zip":"93727","cbm":2.497,"cbm_src":"kit_CW","lbs":224.8,"warn":false,"lm_cost":130},{"id":"20087369","sku":"011403404","name":"Remedios  Bamba","city":"Hayward","state":"California","zip":"94541","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20087335","sku":"FTA90838-WTE-ABC-01","name":"Paul DuMontelle","city":"Santa Clara","state":"California","zip":"95051","cbm":0.749,"cbm_src":"kit_CW","lbs":476.0,"warn":true,"lm_cost":230}]}],"total_orders":48,"total_units":51,"total_cbm":53.343,"total_lbs":6740.6,"cbm_true":35.16,"cbm_est":18.19,"miles":461,"drive_h":8.4,"stop_h":4,"total_h":12.4,"days":2,"legs":[{"from":"WH","to":"Commerce","miles":13,"drive_hrs":0.2},{"from":"Commerce","to":"Benicia","miles":448,"drive_hrs":8.1}],"hwy":["I-5","I-110","I-80"],"ftl_cost":1291.04,"lm_cost":7240,"total_cost":8531.04,"cost_per_order":177.73,"rate_per_mi":2.8,"third_man":10,"wh_city":"Gardena CA","wh_lat":33.8978,"wh_lng":-118.2987,"route_notes":"LA-01 SoCal + NorCal · I-5 → I-110 → I-80","need_cbm":0},{"id":3,"wh":"LA","corridor":"LA-01 SoCal + NorCal","status":"HOLD","load_pct":23.4,"stops":[{"id":"U025","name":"025 Benicia","city":"Benicia","state":"CA","zip":"94510","orders":5,"units":6,"cbm":8.55,"cbm_true":7.12,"cbm_est":1.43,"lbs":617.0,"third_man":1,"sample_orders":[{"id":"20080395","sku":"FSE90953-BLK-ABC","name":"AMY UNGER","city":"San Francisco","state":"California","zip":"94108","cbm":3.934,"cbm_src":"kit_CW","lbs":317.4,"warn":true,"lm_cost":230},{"id":"20079942","sku":"999475383","name":"Marin Blomquist","city":"Oakland","state":"California","zip":"94619","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20078825","sku":"FSE90953-SAN-AB","name":"Victorio Shaw","city":"Santa Rosa","state":"California","zip":"95409","cbm":2.49,"cbm_src":"kit_CW","lbs":224.9,"warn":false,"lm_cost":130},{"id":"20078511","sku":"FSF90837-BGE-B","name":"Lily Hu","city":"Discovery Bay","state":"California","zip":"94505","cbm":0.696,"cbm_src":"sku_DG","lbs":74.8,"warn":false,"lm_cost":130},{"id":"20078198","sku":"014328135","name":"Caitlin Croft","city":"Alameda","state":"California","zip":"94501","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]},{"id":"U170","name":"170 Sacramento","city":"Sacramento","state":"CA","zip":"95828","orders":5,"units":7,"cbm":4.38,"cbm_true":1.88,"cbm_est":2.5,"lbs":327.4,"third_man":1,"sample_orders":[{"id":"20086971","sku":"FBD90883-CHA-AB-CK","name":"Mohammad Mashriqi","city":"Folsom","state":"California","zip":"95630","cbm":1.22,"cbm_src":"kit_CW","lbs":275.4,"warn":true,"lm_cost":230},{"id":"20085684","sku":"999509557","name":"Jessica Lang","city":"Roseville","state":"California","zip":"95661","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20082598","sku":"011345497","name":"Joyce Ng","city":"Sacramento","state":"California","zip":"95834","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20079419","sku":"FAR16842-JAG","name":"Christine Savage  Fa","city":"Granite Bay ","state":"California","zip":"95746","cbm":0.662,"cbm_src":"sku_DG","lbs":52.0,"warn":false,"lm_cost":130},{"id":"20078791","sku":"013121493","name":"Asghar Agheli","city":"FOLSOM","state":"California","zip":"95630","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]}],"total_orders":10,"total_units":13,"total_cbm":12.923,"total_lbs":944.5,"cbm_true":9.0,"cbm_est":3.92,"miles":513,"drive_h":9.3,"stop_h":4,"total_h":13.3,"days":2,"legs":[{"from":"WH","to":"Benicia","miles":449,"drive_hrs":8.2},{"from":"Benicia","to":"Sacramento","miles":64,"drive_hrs":1.2}],"hwy":["I-5","I-110","I-80"],"ftl_cost":1435.43,"lm_cost":1500,"total_cost":2935.43,"cost_per_order":293.54,"rate_per_mi":2.8,"third_man":2,"wh_city":"Gardena CA","wh_lat":33.8978,"wh_lng":-118.2987,"route_notes":"LA-01 SoCal + NorCal · I-5 → I-110 → I-80","need_cbm":19.58},{"id":4,"wh":"LA","corridor":"LA-02 Desert SW + Mountain","status":"DISPATCH","load_pct":84.5,"stops":[{"id":"U168","name":"168 Phoenix","city":"Phoenix","state":"AZ","zip":"85009","orders":19,"units":21,"cbm":22.63,"cbm_true":12.65,"cbm_est":9.99,"lbs":1929.0,"third_man":5,"sample_orders":[{"id":"20088730","sku":"101174455","name":"Sena Purvines","city":"Sedona","state":"Arizona","zip":"86336","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20087305","sku":"011403404","name":"Molly Matzke","city":"Yuma","state":"Arizona","zip":"85367","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20086823","sku":"011721906","name":"Julia  Corbin","city":"Phoenix","state":"Arizona","zip":"85032","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20086537","sku":"014328135","name":"Darlah Carey","city":"Phoenix","state":"Arizona","zip":"85085","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20086510","sku":"GWM16467-GOD","name":"Nirmala Gandhe","city":"Paradise Valley","state":"Arizona","zip":"85253","cbm":0.355,"cbm_src":"sku_DG","lbs":49.7,"warn":false,"lm_cost":130},{"id":"20085952","sku":"013338503","name":"Ghaith Bash imam","city":"Mesa","state":"Arizona","zip":"85204","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]},{"id":"U056","name":"056 Las Vegas","city":"North Las Vegas","state":"NV","zip":"89032","orders":13,"units":13,"cbm":11.22,"cbm_true":10.51,"cbm_est":0.71,"lbs":2493.1,"third_man":4,"sample_orders":[{"id":"20089023","sku":"FTA90880-OAK-AB","name":"Kaelyn Hearn","city":"Las Vegas","state":"Nevada","zip":"89138","cbm":1.188,"cbm_src":"kit_CW","lbs":401.7,"warn":true,"lm_cost":230},{"id":"20088651","sku":"FBD90881-IVY-AB-KG","name":"Dayana Shakerian","city":"Las Vegas","state":"Nevada","zip":"89138","cbm":2.054,"cbm_src":"kit_CW","lbs":326.9,"warn":true,"lm_cost":230},{"id":"20088542","sku":"999293853","name":"Antaleise  Lewis","city":"Henderson ","state":"Nevada","zip":"89044","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20087198","sku":"FTA90888-WTE-AB","name":"Angelica Jackson","city":"Las Vegas","state":"Nevada","zip":"89135","cbm":1.065,"cbm_src":"kit_CW","lbs":664.0,"warn":true,"lm_cost":230},{"id":"20087007","sku":"999145037","name":"Alyson Wolfe","city":"Las Vegas","state":"Nevada","zip":"89123","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20083481","sku":"FAR16834-TDV","name":"Xavier Butron","city":"Las Vegas","state":"Nevada","zip":"89147","cbm":0.668,"cbm_src":"sku_DG","lbs":58.0,"warn":false,"lm_cost":130}]},{"id":"U137","name":"137 Lindon","city":"Springville","state":"UT","zip":"84663","orders":5,"units":6,"cbm":5.02,"cbm_true":2.88,"cbm_est":2.14,"lbs":977.0,"third_man":3,"sample_orders":[{"id":"20085405","sku":"013342369","name":"Linda Gross","city":"Murray","state":"Utah","zip":"84123","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20082614","sku":"011216073","name":"Steve Pruitt","city":"Herriman","state":"Utah","zip":"84096","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20079508","sku":"FBD90883-OTM-AB-KG","name":"Beth Holzendorf","city":"Spanish fork","state":"Utah","zip":"84660","cbm":1.276,"cbm_src":"kit_CW","lbs":276.3,"warn":true,"lm_cost":230},{"id":"20078188","sku":"FCT90890-SAN-AB","name":"Lisa Muse","city":"South Jordan","state":"Utah","zip":"84095","cbm":0.42,"cbm_src":"kit_CW","lbs":299.0,"warn":true,"lm_cost":230},{"id":"20078144","sku":"FTA90880-OAK-AB","name":"REBECCA VAN DER BEEK","city":"Pleasant Grove","state":"Utah","zip":"84062","cbm":1.188,"cbm_src":"kit_CW","lbs":401.7,"warn":true,"lm_cost":230}]},{"id":"U167","name":"167 Denver","city":"Denver","state":"CO","zip":"80216","orders":8,"units":9,"cbm":7.8,"cbm_true":3.88,"cbm_est":3.92,"lbs":801.0,"third_man":2,"sample_orders":[{"id":"20088612","sku":"FAR16841-ZBR","name":"naomi Richardson","city":"Denver","state":"Colorado","zip":"80206","cbm":0.614,"cbm_src":"sku_DG","lbs":40.0,"warn":false,"lm_cost":130},{"id":"20086180","sku":"999471819","name":"Zach Schwartz","city":"Denver","state":"Colorado","zip":"80204","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20084258","sku":"999614479","name":"Djenny Manuana","city":"Aurora","state":"Colorado","zip":"80011","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20083957","sku":"010695600","name":"Dana Rutherford","city":"Parker","state":"Colorado","zip":"80134","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20081030","sku":"FBD90835-GRY-AB-KG","name":"Lisa Hadfield","city":"Castle Rock","state":"Colorado","zip":"80104","cbm":1.77,"cbm_src":"kit_CW","lbs":263.0,"warn":true,"lm_cost":230},{"id":"20080202","sku":"014209993","name":"Monique Memminger","city":"Denver","state":"Colorado","zip":"80237","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]}],"total_orders":45,"total_units":49,"total_cbm":46.669,"total_lbs":6200.2,"cbm_true":29.91,"cbm_est":16.76,"miles":1632,"drive_h":29.7,"stop_h":8,"total_h":37.7,"days":4,"legs":[{"from":"WH","to":"Phoenix","miles":446,"drive_hrs":8.1},{"from":"Phoenix","to":"North Las Vegas","miles":326,"drive_hrs":5.9},{"from":"North Las Vegas","to":"Springville","miles":415,"drive_hrs":7.5},{"from":"Springville","to":"Denver","miles":444,"drive_hrs":8.1}],"hwy":["I-10","I-15","I-70"],"ftl_cost":4568.35,"lm_cost":7250,"total_cost":11818.35,"cost_per_order":262.63,"rate_per_mi":2.8,"third_man":14,"wh_city":"Gardena CA","wh_lat":33.8978,"wh_lng":-118.2987,"route_notes":"LA-02 Desert SW + Mountain · I-10 → I-15 → I-70","need_cbm":0},{"id":5,"wh":"LA","corridor":"LA-03 PNW + Northwest","status":"HOLD","load_pct":27.9,"stops":[{"id":"U044","name":"044 Kent","city":"Tukwila","state":"WA","zip":"98188","orders":7,"units":9,"cbm":11.18,"cbm_true":8.68,"cbm_est":2.5,"lbs":1002.3,"third_man":2,"sample_orders":[{"id":"20086224","sku":"FBD90881-IVY-AB-KG","name":"Joe Mayeaux","city":"Bonney Lake","state":"Washington","zip":"98391","cbm":2.054,"cbm_src":"kit_CW","lbs":326.9,"warn":true,"lm_cost":230},{"id":"20085596","sku":"FSE90953-BLK-AB","name":"Jennifer Sprague","city":"Snohomish","state":"Washington","zip":"98290","cbm":2.497,"cbm_src":"kit_CW","lbs":224.8,"warn":false,"lm_cost":130},{"id":"20085436","sku":"014761886","name":"Carleen de Recat","city":"Redmond","state":"Washington","zip":"98052","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20082438","sku":"FSE90953-SAN-AB2C","name":"Judy Njage","city":"Gig Harbor","state":"Washington","zip":"98335","cbm":3.94,"cbm_src":"kit_CW","lbs":341.7,"warn":true,"lm_cost":230},{"id":"20082106","sku":"011981652","name":"Hsiu-Fang Teng","city":"Bellevue","state":"Washington","zip":"98008","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20078213","sku":"999509557","name":"Angelina Kirlyk","city":"Algona","state":"Washington","zip":"98001","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]},{"id":"U135","name":"135 Portland","city":"Portland","state":"OR","zip":"97230","orders":4,"units":9,"cbm":1.98,"cbm_true":0.91,"cbm_est":1.07,"lbs":101.7,"third_man":0,"sample_orders":[{"id":"20087730","sku":"GWM16467-GOD","name":"Natalya McAleer","city":"RIDGEFIELD","state":"Washington","zip":"98642","cbm":0.355,"cbm_src":"sku_DG","lbs":49.7,"warn":false,"lm_cost":130},{"id":"20085122","sku":"GCV16910-GRN","name":"Janet Kayser","city":"Portland","state":"Oregon","zip":"97212","cbm":0.277,"cbm_src":"sku_DG","lbs":26.0,"warn":false,"lm_cost":130},{"id":"20082150","sku":"013324934","name":"Heather Spicer","city":"West Linn","state":"Oregon","zip":"97068","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20081977","sku":"GRC15935-MUL","name":"Hilda Stone","city":"Tigard","state":"Oregon","zip":"97224","cbm":0.277,"cbm_src":"sku_DG","lbs":26.0,"warn":false,"lm_cost":130}]},{"id":"U110","name":"110 Boise","city":"Boise","state":"ID","zip":"83716","orders":1,"units":1,"cbm":1.76,"cbm_true":1.76,"cbm_est":0,"lbs":288.4,"third_man":1,"sample_orders":[{"id":"20089396","sku":"FBD90881-IVY-AB-QN","name":"Brittany Buss","city":"Eagle","state":"Idaho","zip":"83616","cbm":1.761,"cbm_src":"kit_CW","lbs":288.4,"warn":true,"lm_cost":230}]},{"id":"U152","name":"152 Montana","city":"Billings","state":"MT","zip":"59101","orders":1,"units":1,"cbm":0.48,"cbm_true":0.48,"cbm_est":0,"lbs":145.0,"third_man":0,"sample_orders":[{"id":"20082180","sku":"FCT16238-BLK","name":"Tanna Hendrickson","city":"Scranton ","state":"North Dakota","zip":"58653","cbm":0.48,"cbm_src":"sku_DG","lbs":145.0,"warn":false,"lm_cost":130}]}],"total_orders":13,"total_units":20,"total_cbm":15.397,"total_lbs":1537.5,"cbm_true":11.83,"cbm_est":3.57,"miles":2300,"drive_h":41.8,"stop_h":8,"total_h":49.8,"days":5,"legs":[{"from":"WH","to":"Tukwila","miles":1199,"drive_hrs":21.8},{"from":"Tukwila","to":"Portland","miles":165,"drive_hrs":3.0},{"from":"Portland","to":"Boise","miles":426,"drive_hrs":7.8},{"from":"Boise","to":"Billings","miles":509,"drive_hrs":9.2}],"hwy":["I-5","US-97","I-84","I-90"],"ftl_cost":6439.23,"lm_cost":1990,"total_cost":8429.23,"cost_per_order":648.4,"rate_per_mi":2.8,"third_man":3,"wh_city":"Gardena CA","wh_lat":33.8978,"wh_lng":-118.2987,"route_notes":"LA-03 PNW + Northwest · I-5 → US-97 → I-84 → I-90","need_cbm":17.1},{"id":6,"wh":"HOU","corridor":"HO-01 Texas + Gulf South","status":"DISPATCH","load_pct":99.5,"stops":[{"id":"U191","name":"191 San Antonio","city":"San Antonio","state":"TX","zip":"78218","orders":17,"units":23,"cbm":10.28,"cbm_true":6.0,"cbm_est":4.28,"lbs":1404.5,"third_man":2,"sample_orders":[{"id":"20087596","sku":"GWM16467-GOD","name":"Pamela  Jackson","city":"San Antonio","state":"Texas","zip":"78220","cbm":0.71,"cbm_src":"sku_DG","lbs":99.4,"warn":false,"lm_cost":130},{"id":"20087298","sku":"HRU14657-IVY","name":"Busra Sahin","city":"Austin","state":"Texas","zip":"78745","cbm":0.172,"cbm_src":"sku_DG","lbs":82.5,"warn":false,"lm_cost":130},{"id":"20086904","sku":"999509557","name":"Becca Dahm","city":"Boerne","state":"Texas","zip":"78006","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20086752","sku":"FCB16848-GBK","name":"Choumate JeanPierre","city":"Round Rock","state":"Texas","zip":"78665","cbm":0.617,"cbm_src":"sku_DG","lbs":87.0,"warn":false,"lm_cost":130},{"id":"20086367","sku":"FCT16238-BLK","name":"Jose Ramirez","city":"Laredo","state":"Texas","zip":"78045","cbm":0.48,"cbm_src":"sku_DG","lbs":145.0,"warn":false,"lm_cost":130},{"id":"20085986","sku":"999732252","name":"Marina O'Neill","city":"Wimberley","state":"Texas","zip":"78676","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]},{"id":"U092","name":"092 Houston","city":"Houston","state":"TX","zip":"77018","orders":33,"units":46,"cbm":38.75,"cbm_true":28.06,"cbm_est":10.7,"lbs":5014.3,"third_man":7,"sample_orders":[{"id":"20089509","sku":"FBD90881-IVY-AB-QN","name":"Tina Gianni","city":"Houston","state":"Texas","zip":"77055","cbm":1.761,"cbm_src":"kit_CW","lbs":288.4,"warn":true,"lm_cost":230},{"id":"20088920","sku":"GFM16466-GRN","name":"Sandi Bicknell","city":"Kemah","state":"Texas","zip":"77565","cbm":0.501,"cbm_src":"sku_DG","lbs":89.2,"warn":false,"lm_cost":130},{"id":"20088123","sku":"FSE90953-BLK-AB2C","name":"Benjamin Ossai","city":"Manvel","state":"Texas","zip":"77578","cbm":3.934,"cbm_src":"kit_CW","lbs":317.4,"warn":true,"lm_cost":230},{"id":"20087750","sku":"FTA90880-OAK-AB","name":"Pamela Destin","city":"Manvel","state":"Texas","zip":"77578","cbm":1.188,"cbm_src":"kit_CW","lbs":401.7,"warn":true,"lm_cost":230},{"id":"20087303","sku":"013655584","name":"Thao Vo","city":"Cypress","state":"Texas","zip":"77433","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20087277","sku":"GWM16004-GRY","name":"JACKIELYN Cutts","city":"Richmond","state":"Texas","zip":"77407","cbm":0.258,"cbm_src":"sku_DG","lbs":61.2,"warn":false,"lm_cost":130}]},{"id":"U169","name":"169 Hammond","city":"Hammond","state":"LA","zip":"70403","orders":7,"units":8,"cbm":5.92,"cbm_true":3.07,"cbm_est":2.85,"lbs":752.7,"third_man":2,"sample_orders":[{"id":"20089314","sku":"FGO16572-OAK","name":"Anyssa Jackson","city":"Zachary","state":"Louisiana","zip":"70791","cbm":1.147,"cbm_src":"sku_DG","lbs":341.7,"warn":true,"lm_cost":230},{"id":"20088090","sku":"999509557","name":"Dana LeBlanc","city":"Morgan City","state":"Louisiana","zip":"70380","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20087433","sku":"010544562","name":"Stacey Campesi","city":"Baton Rouge","state":"Louisiana","zip":"70806","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20086790","sku":"FSE90886-WTE-AB","name":"Sheila Boysen","city":"New Orleans","state":"Louisiana","zip":"70115","cbm":1.752,"cbm_src":"kit_CW","lbs":328.5,"warn":true,"lm_cost":230},{"id":"20086743","sku":"999942759","name":"Alec Duhe","city":"Baton Rouge","state":"Louisiana","zip":"70809","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20084597","sku":"014209993","name":"Kaisha Thomas","city":"New Orleans","state":"Louisiana","zip":"70114","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]}],"total_orders":57,"total_units":77,"total_cbm":54.953,"total_lbs":7171.6,"cbm_true":37.13,"cbm_est":17.82,"miles":818,"drive_h":14.9,"stop_h":6,"total_h":20.9,"days":2,"legs":[{"from":"WH","to":"San Antonio","miles":218,"drive_hrs":4.0},{"from":"San Antonio","to":"Houston","miles":225,"drive_hrs":4.1},{"from":"Houston","to":"Hammond","miles":375,"drive_hrs":6.8}],"hwy":["I-10","I-35","US-90"],"ftl_cost":2044.71,"lm_cost":8510,"total_cost":10554.71,"cost_per_order":185.17,"rate_per_mi":2.5,"third_man":11,"wh_city":"Houston TX","wh_lat":29.6297,"wh_lng":-95.4952,"route_notes":"HO-01 Texas + Gulf South · I-10 → I-35 → US-90","need_cbm":0},{"id":7,"wh":"HOU","corridor":"HO-01 Texas + Gulf South","status":"HOLD","load_pct":16.1,"stops":[{"id":"U169","name":"169 Hammond","city":"Hammond","state":"LA","zip":"70403","orders":6,"units":8,"cbm":4.6,"cbm_true":1.03,"cbm_est":3.57,"lbs":309.6,"third_man":0,"sample_orders":[{"id":"20082361","sku":"101174455","name":"Monica Abdullah","city":"Bridge city ","state":"Louisiana","zip":"70094","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20081445","sku":"999572468","name":"Ben Fontenot","city":"Lafayette","state":"Louisiana","zip":"70508","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20080838","sku":"HRU05298-CRE","name":"EBONY LAYTON","city":"Bossier City","state":"Louisiana","zip":"71111","cbm":0.156,"cbm_src":"sku_DG","lbs":74.8,"warn":false,"lm_cost":130},{"id":"20079769","sku":"014328135","name":"Susan Schadt","city":"New Orleans","state":"Louisiana","zip":"70118","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20079255","sku":"044071788","name":"Keiana Miller","city":"Gonzales","state":"Louisiana","zip":"70737","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20077972","sku":"FCB16614-SAN","name":"Dexter Ruffin","city":"Destrehan","state":"Louisiana","zip":"70047","cbm":0.876,"cbm_src":"sku_DG","lbs":234.8,"warn":false,"lm_cost":130}]},{"id":"U165","name":"165 Pearl","city":"Pearl","state":"MS","zip":"39208","orders":2,"units":2,"cbm":2.15,"cbm_true":1.08,"cbm_est":1.07,"lbs":335.0,"third_man":1,"sample_orders":[{"id":"20087026","sku":"014775920","name":"Jamie  McCoy","city":"Sumrall","state":"Mississippi","zip":"39482","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20078021","sku":"FBU16846-CBK","name":"Ike Haynes","city":"Carson","state":"Mississippi","zip":"39427","cbm":1.076,"cbm_src":"sku_DG","lbs":335.0,"warn":true,"lm_cost":230}]},{"id":"U172","name":"172 Arkansas","city":"Jacksonville","state":"AR","zip":"72076","orders":2,"units":4,"cbm":2.14,"cbm_true":0,"cbm_est":2.14,"lbs":0.0,"third_man":0,"sample_orders":[{"id":"20084562","sku":"014328135","name":"macy crossland","city":"Rogers","state":"Arkansas","zip":"72758","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20081301","sku":"014761886","name":"Maria C Carrera","city":"Lowell","state":"Arkansas","zip":"72745","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]}],"total_orders":10,"total_units":14,"total_cbm":8.884,"total_lbs":644.6,"cbm_true":2.11,"cbm_est":6.78,"miles":805,"drive_h":14.6,"stop_h":6,"total_h":20.6,"days":2,"legs":[{"from":"WH","to":"Hammond","miles":384,"drive_hrs":7.0},{"from":"Hammond","to":"Pearl","miles":155,"drive_hrs":2.8},{"from":"Pearl","to":"Jacksonville","miles":266,"drive_hrs":4.8}],"hwy":["I-10","I-35","US-90"],"ftl_cost":2012.7,"lm_cost":1400,"total_cost":3412.7,"cost_per_order":341.27,"rate_per_mi":2.5,"third_man":1,"wh_city":"Houston TX","wh_lat":29.6297,"wh_lng":-95.4952,"route_notes":"HO-01 Texas + Gulf South · I-10 → I-35 → US-90","need_cbm":23.62},{"id":8,"wh":"HOU","corridor":"HO-02 Florida","status":"DISPATCH","load_pct":98.7,"stops":[{"id":"U001","name":"001 Pompano Beach","city":"Pompano Beach","state":"FL","zip":"33064","orders":46,"units":54,"cbm":54.54,"cbm_true":40.64,"cbm_est":13.89,"lbs":5454.5,"third_man":9,"sample_orders":[{"id":"20089556","sku":"999214959","name":"Stacie Boyar","city":"Boca","state":"Florida","zip":"33487","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20089299","sku":"011403404","name":"Stephanie Moreton","city":"Weston","state":"Florida","zip":"33332","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20089217","sku":"999700046","name":"Yusimil Calveiro","city":"Davie ","state":"Florida","zip":"33328","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20088240","sku":"999509557","name":"Carmen ortega","city":"MIAMI","state":"Florida","zip":"33158","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20088148","sku":"013655584","name":"DANIELLE LINDER","city":"Southwest ranches ","state":"Florida","zip":"33330","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20087922","sku":"999398640","name":"Vu Pham","city":"Port St. Lucie","state":"Florida","zip":"34953","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]}],"total_orders":46,"total_units":54,"total_cbm":54.539,"total_lbs":5454.5,"cbm_true":40.64,"cbm_est":13.89,"miles":1208,"drive_h":22.0,"stop_h":2,"total_h":24.0,"days":3,"legs":[{"from":"WH","to":"Pompano Beach","miles":1208,"drive_hrs":22.0}],"hwy":["I-10","I-75"],"ftl_cost":3019.52,"lm_cost":6880,"total_cost":9899.52,"cost_per_order":215.21,"rate_per_mi":2.5,"third_man":9,"wh_city":"Houston TX","wh_lat":29.6297,"wh_lng":-95.4952,"route_notes":"HO-02 Florida · I-10 → I-75","need_cbm":0},{"id":9,"wh":"HOU","corridor":"HO-02 Florida","status":"DISPATCH","load_pct":97.0,"stops":[{"id":"U001","name":"001 Pompano Beach","city":"Pompano Beach","state":"FL","zip":"33064","orders":8,"units":9,"cbm":9.29,"cbm_true":7.86,"cbm_est":1.43,"lbs":1186.0,"third_man":2,"sample_orders":[{"id":"20079558","sku":"FBD90883-CHA-AB-KG","name":"Dylan Greenberg","city":"Boca Raton","state":"Florida","zip":"33487","cbm":1.25,"cbm_src":"kit_CW","lbs":277.4,"warn":true,"lm_cost":230},{"id":"20079075","sku":"FBD90881-IVY-AB-KG","name":"Luisa Rios","city":"Miami","state":"Florida","zip":"33137","cbm":2.054,"cbm_src":"kit_CW","lbs":326.9,"warn":true,"lm_cost":230},{"id":"20078919","sku":"014328135","name":"Rita Cindrich","city":"Boca Raton","state":"Florida","zip":"33432","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20078702","sku":"FBD90835-IVY-AB-KG","name":"Jacob Lisogorsky","city":"Delray Beach","state":"Florida","zip":"33446","cbm":1.77,"cbm_src":"kit_CW","lbs":240.0,"warn":false,"lm_cost":130},{"id":"20078153","sku":"999572468","name":"Christopher Staib","city":"Boca Raton","state":"Florida","zip":"33486","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20078117","sku":"GWM16467-GOD","name":"Edwin perkins","city":"Parkland","state":"Florida","zip":"33076","cbm":0.355,"cbm_src":"sku_DG","lbs":49.7,"warn":false,"lm_cost":130}]},{"id":"U003","name":"003 Tampa","city":"Seffner","state":"FL","zip":"33584","orders":38,"units":43,"cbm":35.94,"cbm_true":25.6,"cbm_est":10.34,"lbs":4622.5,"third_man":8,"sample_orders":[{"id":"20089515","sku":"FGO16572-OAK","name":"Christi  Delbakhsh","city":"Orlando","state":"Florida","zip":"32819","cbm":1.147,"cbm_src":"sku_DG","lbs":341.7,"warn":true,"lm_cost":230},{"id":"20089184","sku":"FSE90953-SAN-B","name":"Krislyn  Rojas","city":"Kissimmee","state":"Florida","zip":"34744","cbm":1.282,"cbm_src":"sku_DG","lbs":112.4,"warn":false,"lm_cost":130},{"id":"20088801","sku":"FTA90889-SAN-AC","name":"Rose danho","city":"Orlando","state":"Florida","zip":"32829","cbm":0.69,"cbm_src":"kit_CW","lbs":484.7,"warn":true,"lm_cost":230},{"id":"20088788","sku":"FCB16614-SAN","name":"Lauren  Kosunskiy","city":"Tampa ","state":"Florida","zip":"33629","cbm":0.876,"cbm_src":"sku_DG","lbs":234.8,"warn":false,"lm_cost":130},{"id":"20088548","sku":"012058028","name":"Meg Farson","city":"Fort Myers","state":"Florida","zip":"33901","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20088197","sku":"GWM16467-GOD","name":"Julliana Akron","city":"tampa","state":"Florida","zip":"33626","cbm":0.355,"cbm_src":"sku_DG","lbs":49.7,"warn":false,"lm_cost":130}]},{"id":"U004","name":"004 Jacksonville","city":"Jacksonville","state":"FL","zip":"32218","orders":5,"units":6,"cbm":8.37,"cbm_true":5.16,"cbm_est":3.21,"lbs":397.4,"third_man":1,"sample_orders":[{"id":"20089411","sku":"011403404","name":"Olivia Eagle","city":"Jacksonville","state":"Florida","zip":"32256","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20087700","sku":"FAR16841-ZBR","name":"Hillary Germano","city":"St Simons Island","state":"Georgia","zip":"31522","cbm":1.227,"cbm_src":"sku_DG","lbs":80.0,"warn":false,"lm_cost":130},{"id":"20084861","sku":"014224408","name":"Mckenzie Henry","city":"Jacksonville","state":"Florida","zip":"32258","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20083657","sku":"601246488","name":"Noura Abi-Khalil","city":"Jacksonville","state":"Florida","zip":"32277","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20083015","sku":"FSE90953-BLK-ABC","name":"Jason Thomas","city":"Daytona Beach","state":"Florida","zip":"32117","cbm":3.934,"cbm_src":"kit_CW","lbs":317.4,"warn":true,"lm_cost":230}]}],"total_orders":51,"total_units":58,"total_cbm":53.596,"total_lbs":6205.9,"cbm_true":38.62,"cbm_est":14.98,"miles":1653,"drive_h":30.1,"stop_h":6,"total_h":36.1,"days":4,"legs":[{"from":"WH","to":"Pompano Beach","miles":1208,"drive_hrs":22.0},{"from":"Pompano Beach","to":"Seffner","miles":224,"drive_hrs":4.1},{"from":"Seffner","to":"Jacksonville","miles":221,"drive_hrs":4.0}],"hwy":["I-10","I-75"],"ftl_cost":4132.64,"lm_cost":7730,"total_cost":11862.64,"cost_per_order":232.6,"rate_per_mi":2.5,"third_man":11,"wh_city":"Houston TX","wh_lat":29.6297,"wh_lng":-95.4952,"route_notes":"HO-02 Florida · I-10 → I-75","need_cbm":0},{"id":10,"wh":"HOU","corridor":"HO-02 Florida","status":"HOLD","load_pct":16.8,"stops":[{"id":"U081","name":"081 Tallahassee","city":"Tallahassee","state":"FL","zip":"32304","orders":4,"units":5,"cbm":9.3,"cbm_true":7.87,"cbm_est":1.43,"lbs":659.1,"third_man":2,"sample_orders":[{"id":"20087339","sku":"FSE90953-BLK-ABC","name":"Jermaler Powell","city":"Ashford","state":"Alabama","zip":"36312","cbm":3.934,"cbm_src":"kit_CW","lbs":317.4,"warn":true,"lm_cost":230},{"id":"20086949","sku":"999509557","name":"Claudia Cheramie","city":"Inlet Beach","state":"Florida","zip":"32461","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20086632","sku":"FSE90953-SAN-ABC","name":"Levonna Wright","city":"Tallahassee","state":"Florida","zip":"32308","cbm":3.94,"cbm_src":"kit_CW","lbs":341.7,"warn":true,"lm_cost":230},{"id":"20086511","sku":"010544562","name":"Latreshia  Mayberry-","city":"Thomasville","state":"Georgia","zip":"31757","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]}],"total_orders":4,"total_units":5,"total_cbm":9.299,"total_lbs":659.1,"cbm_true":7.87,"cbm_est":1.43,"miles":836,"drive_h":15.2,"stop_h":2,"total_h":17.2,"days":2,"legs":[{"from":"WH","to":"Tallahassee","miles":836,"drive_hrs":15.2}],"hwy":["I-10","I-75"],"ftl_cost":2090.07,"lm_cost":720,"total_cost":2810.07,"cost_per_order":702.52,"rate_per_mi":2.5,"third_man":2,"wh_city":"Houston TX","wh_lat":29.6297,"wh_lng":-95.4952,"route_notes":"HO-02 Florida · I-10 → I-75","need_cbm":23.2},{"id":11,"wh":"HOU","corridor":"HO-03 SE GA + Carolinas","status":"DISPATCH","load_pct":98.9,"stops":[{"id":"U180","name":"180 Augusta","city":"Augusta","state":"GA","zip":"30901","orders":42,"units":47,"cbm":44.02,"cbm_true":31.55,"cbm_est":12.48,"lbs":5606.9,"third_man":10,"sample_orders":[{"id":"20089249","sku":"FTA90880-OAK-AB","name":"amy heerema","city":"Canton","state":"Georgia","zip":"30114","cbm":1.188,"cbm_src":"kit_CW","lbs":401.7,"warn":true,"lm_cost":230},{"id":"20088474","sku":"014209306","name":"Christine Williams","city":"Atlanta","state":"Georgia","zip":"30331","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20088217","sku":"GWM16467-GOD","name":"Lori  Miles","city":"Alpharetta","state":"Georgia","zip":"30009","cbm":0.355,"cbm_src":"sku_DG","lbs":49.7,"warn":false,"lm_cost":130},{"id":"20088127","sku":"FSE90882-IVY-ABC","name":"April Means","city":"Smyrna","state":"Georgia","zip":"30082","cbm":2.16,"cbm_src":"kit_CW","lbs":285.6,"warn":true,"lm_cost":230},{"id":"20087968","sku":"GCV16501-MUL","name":"Alexis Alexander","city":"Buford","state":"Georgia","zip":"30518","cbm":0.116,"cbm_src":"sku_DG","lbs":17.1,"warn":false,"lm_cost":130},{"id":"20087934","sku":"011403404","name":"Latisha Knox-Irby","city":"White","state":"Georgia","zip":"30184","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]},{"id":"U186","name":"186 Charlotte","city":"Rock Hill","state":"SC","zip":"29732","orders":10,"units":15,"cbm":10.59,"cbm_true":6.32,"cbm_est":4.28,"lbs":946.6,"third_man":2,"sample_orders":[{"id":"20089440","sku":"FBD90881-IVY-AB-KG","name":"Ashley Hronek","city":"Charlotte","state":"North Carolina","zip":"28203","cbm":2.054,"cbm_src":"kit_CW","lbs":326.9,"warn":true,"lm_cost":230},{"id":"20088797","sku":"013303171","name":"Krista Gross","city":"Charlotte","state":"North Carolina","zip":"28205","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20088096","sku":"101174455","name":"Ramona Paul","city":"Columbia","state":"South Carolina","zip":"29229","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20087784","sku":"FBD90835-IVY-AB-KG","name":"William Rosario","city":"Rock Hill","state":"South Carolina","zip":"29730","cbm":1.77,"cbm_src":"kit_CW","lbs":240.0,"warn":false,"lm_cost":130},{"id":"20087751","sku":"101174455","name":"Sandra Krumbein","city":"Beech Mountain","state":"North Carolina","zip":"28604","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20087038","sku":"999614479","name":"Tisha  Drayton","city":"Summerville","state":"South Carolina","zip":"29486","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]}],"total_orders":52,"total_units":62,"total_cbm":54.615,"total_lbs":6553.5,"cbm_true":37.87,"cbm_est":16.75,"miles":1191,"drive_h":21.7,"stop_h":4,"total_h":25.7,"days":3,"legs":[{"from":"WH","to":"Augusta","miles":1048,"drive_hrs":19.1},{"from":"Augusta","to":"Rock Hill","miles":143,"drive_hrs":2.6}],"hwy":["I-20","I-85","I-77","I-26"],"ftl_cost":3155.96,"lm_cost":7960,"total_cost":11115.96,"cost_per_order":213.77,"rate_per_mi":2.65,"third_man":12,"wh_city":"Houston TX","wh_lat":29.6297,"wh_lng":-95.4952,"route_notes":"HO-03 SE GA + Carolinas · I-20 → I-85 → I-77 → I-26","need_cbm":0},{"id":12,"wh":"HOU","corridor":"HO-03 SE GA + Carolinas","status":"DISPATCH","load_pct":66.4,"stops":[{"id":"U186","name":"186 Charlotte","city":"Rock Hill","state":"SC","zip":"29732","orders":6,"units":6,"cbm":15.74,"cbm_true":15.74,"cbm_est":0,"lbs":1953.3,"third_man":6,"sample_orders":[{"id":"20082569","sku":"FBD90881-IVY-AB-KG","name":"Kathryn Reithemeyer","city":"Charleston","state":"South Carolina","zip":"29492","cbm":2.054,"cbm_src":"kit_CW","lbs":326.9,"warn":true,"lm_cost":230},{"id":"20081946","sku":"FSE90953-SAN-ABC","name":"Cinthia  Toro","city":"Charlotte","state":"North Carolina","zip":"28216","cbm":3.94,"cbm_src":"kit_CW","lbs":341.7,"warn":true,"lm_cost":230},{"id":"20081843","sku":"FBD90881-IVY-AB-KG","name":"Wincate Tayare","city":"Monroe","state":"North Carolina","zip":"28110","cbm":2.054,"cbm_src":"kit_CW","lbs":326.9,"warn":true,"lm_cost":230},{"id":"20080796","sku":"FSE90494-BGE-ABC","name":"Lauren Amrhein","city":"Charlotte","state":"North Carolina","zip":"28205","cbm":2.758,"cbm_src":"kit_CW","lbs":353.8,"warn":true,"lm_cost":230},{"id":"20078904","sku":"FCT16609-WTE","name":"Patricia Johnson","city":"Ravenel","state":"South Carolina","zip":"29470","cbm":1.0,"cbm_src":"sku_DG","lbs":286.5,"warn":true,"lm_cost":230},{"id":"20078355","sku":"FSE90953-BLK-ABC","name":"Pinese Gilmore","city":"Elloree","state":"South Carolina","zip":"29047","cbm":3.934,"cbm_src":"kit_CW","lbs":317.4,"warn":true,"lm_cost":230}]},{"id":"U033","name":"033 Taylors","city":"Greenville","state":"SC","zip":"29609","orders":1,"units":1,"cbm":0.89,"cbm_true":0.89,"cbm_est":0,"lbs":308.7,"third_man":1,"sample_orders":[{"id":"20085431","sku":"FGO16571-OAK","name":"Bianca Richardson","city":"greer","state":"South Carolina","zip":"29651","cbm":0.893,"cbm_src":"sku_DG","lbs":308.7,"warn":true,"lm_cost":230}]},{"id":"U182","name":"182 Raleigh","city":"Durham","state":"NC","zip":"27703","orders":5,"units":6,"cbm":5.58,"cbm_true":2.37,"cbm_est":3.21,"lbs":354.9,"third_man":1,"sample_orders":[{"id":"20086524","sku":"010544562","name":"Niveen  Esmail","city":"Raleigh","state":"North Carolina","zip":"27614","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20083743","sku":"014328135","name":"Wendy Kelly","city":"Raleigh","state":"North Carolina","zip":"27608","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20082235","sku":"GCV16921-BLU","name":"Eleonora Lad","city":"Durham","state":"North Carolina","zip":"27713","cbm":0.317,"cbm_src":"sku_DG","lbs":28.0,"warn":false,"lm_cost":130},{"id":"20080281","sku":"FBD90881-IVY-AB-KG","name":"Michael Ferris","city":"Sneads Ferry","state":"North Carolina","zip":"28460","cbm":2.054,"cbm_src":"kit_CW","lbs":326.9,"warn":true,"lm_cost":230},{"id":"20079280","sku":"011216073","name":"Madaly Mercado","city":"Raleigh","state":"North Carolina","zip":"27616","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]},{"id":"U181","name":"181 Loxley","city":"Loxley","state":"AL","zip":"36551","orders":5,"units":5,"cbm":8.91,"cbm_true":7.48,"cbm_est":1.43,"lbs":844.7,"third_man":2,"sample_orders":[{"id":"20088741","sku":"FBD90835-IVY-AB-KG","name":"Alexa sparks","city":"Valparaiso","state":"Florida","zip":"32580","cbm":1.77,"cbm_src":"kit_CW","lbs":240.0,"warn":false,"lm_cost":130},{"id":"20086915","sku":"FBD90835-GRY-AB-KG","name":"Carla J.  Chambers","city":"Santa Rosa Beach","state":"Florida","zip":"32459","cbm":1.77,"cbm_src":"kit_CW","lbs":263.0,"warn":true,"lm_cost":230},{"id":"20084871","sku":"014775920","name":"Joseph Bennett","city":"Miramar Beach","state":"Florida","zip":"32550","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20082555","sku":"999700046","name":"Chevette Fiddler","city":"PENSACOLA","state":"Florida","zip":"32526","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20081051","sku":"FSE90953-SAN-ABC","name":"Phylicia Black","city":"Monroeville","state":"Alabama","zip":"36460","cbm":3.94,"cbm_src":"kit_CW","lbs":341.7,"warn":true,"lm_cost":230}]},{"id":"U084","name":"084 Homewood","city":"Homewood","state":"AL","zip":"35209","orders":5,"units":5,"cbm":5.56,"cbm_true":3.42,"cbm_est":2.14,"lbs":630.2,"third_man":2,"sample_orders":[{"id":"20087114","sku":"011216073","name":"London Stephens","city":"Fultondale","state":"Alabama","zip":"35068","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20087096","sku":"FGO16573-OAK","name":"lakitia blanding","city":"Bessemer","state":"Alabama","zip":"35022","cbm":1.014,"cbm_src":"sku_DG","lbs":253.6,"warn":true,"lm_cost":230},{"id":"20083589","sku":"FBD90881-IVY-AB-KG","name":"Saba  Almansoob","city":"Hoover ","state":"Alabama","zip":"35244","cbm":2.054,"cbm_src":"kit_CW","lbs":326.9,"warn":true,"lm_cost":230},{"id":"20082423","sku":"GWM16467-GOD","name":"Willie  Smiley","city":"Trinity ","state":"Alabama","zip":"35673","cbm":0.355,"cbm_src":"sku_DG","lbs":49.7,"warn":false,"lm_cost":130},{"id":"20078743","sku":"014224408","name":"Taura Boykin","city":"McCalla","state":"Alabama","zip":"35111","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]}],"total_orders":22,"total_units":23,"total_cbm":36.685,"total_lbs":4091.8,"cbm_true":29.91,"cbm_est":6.78,"miles":2551,"drive_h":46.4,"stop_h":10,"total_h":56.4,"days":6,"legs":[{"from":"WH","to":"Rock Hill","miles":1150,"drive_hrs":20.9},{"from":"Rock Hill","to":"Greenville","miles":94,"drive_hrs":1.7},{"from":"Greenville","to":"Durham","miles":262,"drive_hrs":4.8},{"from":"Durham","to":"Loxley","miles":789,"drive_hrs":14.3},{"from":"Loxley","to":"Homewood","miles":255,"drive_hrs":4.6}],"hwy":["I-20","I-85","I-77","I-26"],"ftl_cost":6758.92,"lm_cost":4060,"total_cost":10818.92,"cost_per_order":491.77,"rate_per_mi":2.65,"third_man":12,"wh_city":"Houston TX","wh_lat":29.6297,"wh_lng":-95.4952,"route_notes":"HO-03 SE GA + Carolinas · I-20 → I-85 → I-77 → I-26","need_cbm":0},{"id":13,"wh":"HOU","corridor":"HO-04 MidAtlantic","status":"DISPATCH","load_pct":98.8,"stops":[{"id":"U155","name":"155 Sterling","city":"Sterling","state":"VA","zip":"20166","orders":42,"units":47,"cbm":46.02,"cbm_true":31.76,"cbm_est":14.26,"lbs":5020.9,"third_man":8,"sample_orders":[{"id":"20089269","sku":"FBD90835-IVY-AB-KG","name":"Dori Sanders","city":"Harpers Ferry","state":"West Virginia","zip":"25425","cbm":1.77,"cbm_src":"kit_CW","lbs":240.0,"warn":false,"lm_cost":130},{"id":"20089144","sku":"GCV16759-SAN","name":"Miguel Gonzalez","city":"Gaithersburg","state":"Maryland","zip":"20878","cbm":0.237,"cbm_src":"sku_DG","lbs":14.0,"warn":false,"lm_cost":130},{"id":"20088793","sku":"FSE90953-SAN-AB2D","name":"Lashawn Thompson","city":"Waldorf","state":"Maryland","zip":"20601","cbm":3.941,"cbm_src":"kit_CW","lbs":341.7,"warn":true,"lm_cost":230},{"id":"20088277","sku":"014916025","name":"Carl Fortune","city":"Bowie","state":"Maryland","zip":"20720","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20086838","sku":"GFM16466-GRN","name":"Alexis Smith","city":"Owings Mills ","state":"Maryland","zip":"21117","cbm":0.501,"cbm_src":"sku_DG","lbs":89.2,"warn":false,"lm_cost":130},{"id":"20086824","sku":"FTA90888-WTE-AB","name":"Anayo Orezabo","city":"Greenbelt","state":"Maryland","zip":"20770","cbm":1.065,"cbm_src":"kit_CW","lbs":664.0,"warn":true,"lm_cost":230}]},{"id":"U151","name":"151 Chester","city":"Chester","state":"VA","zip":"23836","orders":4,"units":4,"cbm":8.57,"cbm_true":6.43,"cbm_est":2.14,"lbs":566.6,"third_man":1,"sample_orders":[{"id":"20089490","sku":"011216073","name":"Madelyn  Winslow","city":"Newtown ","state":"Virginia","zip":"23126","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20087618","sku":"FSE90953-SAN-ABC","name":"Karen Johnson","city":"Henrico","state":"Virginia","zip":"23231","cbm":3.94,"cbm_src":"kit_CW","lbs":341.7,"warn":true,"lm_cost":230},{"id":"20087617","sku":"011216073","name":"Natalie Bennett","city":"Weems","state":"Virginia","zip":"22576","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20084827","sku":"FSE90953-SAN-AB","name":"Marguerite Munley","city":"Virginia Beach","state":"Virginia","zip":"23464","cbm":2.49,"cbm_src":"kit_CW","lbs":224.9,"warn":false,"lm_cost":130}]}],"total_orders":46,"total_units":51,"total_cbm":54.594,"total_lbs":5587.4,"cbm_true":38.19,"cbm_est":16.4,"miles":1657,"drive_h":30.1,"stop_h":4,"total_h":34.1,"days":4,"legs":[{"from":"WH","to":"Sterling","miles":1517,"drive_hrs":27.6},{"from":"Sterling","to":"Chester","miles":141,"drive_hrs":2.6}],"hwy":["I-20","I-85","I-95","I-78"],"ftl_cost":5138.23,"lm_cost":6880,"total_cost":12018.23,"cost_per_order":261.27,"rate_per_mi":3.1,"third_man":9,"wh_city":"Houston TX","wh_lat":29.6297,"wh_lng":-95.4952,"route_notes":"HO-04 MidAtlantic · I-20 → I-85 → I-95 → I-78","need_cbm":0},{"id":14,"wh":"HOU","corridor":"HO-04 MidAtlantic","status":"DISPATCH","load_pct":99.3,"stops":[{"id":"U151","name":"151 Chester","city":"Chester","state":"VA","zip":"23836","orders":3,"units":3,"cbm":6.06,"cbm_true":4.99,"cbm_est":1.07,"lbs":449.7,"third_man":0,"sample_orders":[{"id":"20083341","sku":"FSE90953-SAN-AB","name":"Tamara  Galarza","city":"Newport News","state":"Virginia","zip":"23608","cbm":2.49,"cbm_src":"kit_CW","lbs":224.9,"warn":false,"lm_cost":130},{"id":"20082350","sku":"014916025","name":"Lily Taylor","city":"Manakin-Sabot","state":"Virginia","zip":"23103","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20079420","sku":"FSE90953-BLK-AB","name":"Jamar Bynum","city":"Norfolk","state":"Virginia","zip":"23502","cbm":2.497,"cbm_src":"kit_CW","lbs":224.8,"warn":false,"lm_cost":130}]},{"id":"U119","name":"119 Bethlehem","city":"Bethlehem","state":"PA","zip":"18015","orders":14,"units":19,"cbm":16.73,"cbm_true":8.17,"cbm_est":8.55,"lbs":907.3,"third_man":1,"sample_orders":[{"id":"20088833","sku":"013324934","name":"Gaetano. (Caffe Euro","city":"Hazle Township","state":"Pennsylvania","zip":"18202","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20088800","sku":"FSE90953-SAN-AB","name":"dolores dinyon","city":"Glen Mills","state":"Pennsylvania","zip":"19342","cbm":2.49,"cbm_src":"kit_CW","lbs":224.9,"warn":false,"lm_cost":130},{"id":"20087654","sku":"LR-SET8045-2P-PSG","name":"Jana Taylor-Pressley","city":"Mullica Hill","state":"New Jersey","zip":"08062","cbm":1.031,"cbm_src":"kit_CW","lbs":172.0,"warn":false,"lm_cost":130},{"id":"20086868","sku":"014761886","name":"Karen Contreras","city":"Townsend","state":"Delaware","zip":"19734","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20085859","sku":"010936598","name":"Steve Cronan","city":"Surf City","state":"New Jersey","zip":"08008","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20085442","sku":"999370709","name":"Almira Cutler Burrou","city":"Philadelphia","state":"Pennsylvania","zip":"19111","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]},{"id":"U138","name":"138 West Orange","city":"West Orange","state":"NJ","zip":"07052","orders":31,"units":33,"cbm":32.06,"cbm_true":19.58,"cbm_est":12.48,"lbs":3919.3,"third_man":7,"sample_orders":[{"id":"20088855","sku":"FCT90890-SAN-AB","name":"Angela Shamooil","city":"Great Neck ","state":"New York","zip":"11021","cbm":0.42,"cbm_src":"kit_CW","lbs":299.0,"warn":true,"lm_cost":230},{"id":"20088573","sku":"GFM16466-GRN","name":"Stephanie Dorsainvil","city":"Jamaica","state":"New York","zip":"11432","cbm":0.501,"cbm_src":"sku_DG","lbs":89.2,"warn":false,"lm_cost":130},{"id":"20088177","sku":"FGO16572-OAK","name":"Samantha Lieberman","city":"New York","state":"New York","zip":"10128","cbm":1.147,"cbm_src":"sku_DG","lbs":341.7,"warn":true,"lm_cost":230},{"id":"20087888","sku":"GWM16467-GOD","name":"Monica Hahn","city":"New City","state":"New York","zip":"10956","cbm":0.355,"cbm_src":"sku_DG","lbs":49.7,"warn":false,"lm_cost":130},{"id":"20087687","sku":"GWM16467-GOD","name":"Michelle Freibaum","city":"Rye","state":"New York","zip":"10580","cbm":0.355,"cbm_src":"sku_DG","lbs":49.7,"warn":false,"lm_cost":130},{"id":"20087633","sku":"FBD90875-IVY-AB-QN","name":"joseph Francisco","city":"Smithtown","state":"New York","zip":"11787","cbm":1.047,"cbm_src":"kit_CW","lbs":261.0,"warn":true,"lm_cost":230}]}],"total_orders":48,"total_units":55,"total_cbm":54.841,"total_lbs":5276.2,"cbm_true":32.74,"cbm_est":22.11,"miles":1847,"drive_h":33.6,"stop_h":6,"total_h":39.6,"days":4,"legs":[{"from":"WH","to":"Chester","miles":1459,"drive_hrs":26.5},{"from":"Chester","to":"Bethlehem","miles":314,"drive_hrs":5.7},{"from":"Bethlehem","to":"West Orange","miles":75,"drive_hrs":1.4}],"hwy":["I-20","I-85","I-95","I-78"],"ftl_cost":5726.3,"lm_cost":7040,"total_cost":12766.3,"cost_per_order":265.96,"rate_per_mi":3.1,"third_man":8,"wh_city":"Houston TX","wh_lat":29.6297,"wh_lng":-95.4952,"route_notes":"HO-04 MidAtlantic · I-20 → I-85 → I-95 → I-78","need_cbm":0},{"id":15,"wh":"HOU","corridor":"HO-04 MidAtlantic","status":"HOLD","load_pct":30.0,"stops":[{"id":"U138","name":"138 West Orange","city":"West Orange","state":"NJ","zip":"07052","orders":12,"units":13,"cbm":14.39,"cbm_true":7.97,"cbm_est":6.42,"lbs":1096.8,"third_man":2,"sample_orders":[{"id":"20082263","sku":"014761886","name":"Maria Vecchiotti Mar","city":"New York","state":"New York","zip":"10128","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20082122","sku":"FCB16848-GBK","name":"Nancy  Kaplan","city":"Scarsdale","state":"New York","zip":"10583","cbm":0.617,"cbm_src":"sku_DG","lbs":87.0,"warn":false,"lm_cost":130},{"id":"20081976","sku":"011403404","name":"Leah Watson","city":"Brooklyn","state":"New York","zip":"11238","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20081730","sku":"FSE90891-OTM-AB2CD","name":"Joanne Marra","city":"Staten island","state":"New York","zip":"10312","cbm":5.025,"cbm_src":"kit_CW","lbs":418.9,"warn":true,"lm_cost":230},{"id":"20081603","sku":"GWM16468-GOD","name":"Tracey Juron","city":"New York","state":"New York","zip":"10010","cbm":0.338,"cbm_src":"sku_DG","lbs":122.8,"warn":false,"lm_cost":130},{"id":"20081366","sku":"010974898","name":"Marla  Spencer","city":"Baldwin","state":"New York","zip":"11510","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]},{"id":"U185","name":"185 Camp Hill","city":"Chambersburg","state":"PA","zip":"17201","orders":1,"units":1,"cbm":1.77,"cbm_true":1.77,"cbm_est":0,"lbs":256.0,"third_man":1,"sample_orders":[{"id":"20086086","sku":"FBD90892-DBL-AB-KG","name":"Nina  Stanley","city":"Lancaster","state":"Pennsylvania","zip":"17601","cbm":1.77,"cbm_src":"kit_CW","lbs":256.0,"warn":true,"lm_cost":230}]},{"id":"U088","name":"088 Coraopolis","city":"Coraopolis","state":"PA","zip":"15108","orders":1,"units":1,"cbm":0.42,"cbm_true":0.42,"cbm_est":0,"lbs":299.0,"third_man":1,"sample_orders":[{"id":"20080168","sku":"FCT90890-SAN-AB","name":"BenFauzi El-Attrache","city":"Mt Pleasant","state":"Pennsylvania","zip":"15666","cbm":0.42,"cbm_src":"kit_CW","lbs":299.0,"warn":true,"lm_cost":230}]}],"total_orders":14,"total_units":15,"total_cbm":16.578,"total_lbs":1651.8,"cbm_true":10.16,"cbm_est":6.42,"miles":2184,"drive_h":39.7,"stop_h":6,"total_h":45.7,"days":5,"legs":[{"from":"WH","to":"West Orange","miles":1774,"drive_hrs":32.3},{"from":"West Orange","to":"Chambersburg","miles":236,"drive_hrs":4.3},{"from":"Chambersburg","to":"Coraopolis","miles":174,"drive_hrs":3.2}],"hwy":["I-20","I-85","I-95","I-78"],"ftl_cost":6769.4,"lm_cost":2220,"total_cost":8989.4,"cost_per_order":642.1,"rate_per_mi":3.1,"third_man":4,"wh_city":"Houston TX","wh_lat":29.6297,"wh_lng":-95.4952,"route_notes":"HO-04 MidAtlantic · I-20 → I-85 → I-95 → I-78","need_cbm":15.92},{"id":16,"wh":"HOU","corridor":"HO-05 Ohio + Great Lakes","status":"DISPATCH","load_pct":83.2,"stops":[{"id":"U136","name":"136 Columbus","city":"Columbus","state":"OH","zip":"43228","orders":5,"units":5,"cbm":8.41,"cbm_true":6.98,"cbm_est":1.43,"lbs":960.7,"third_man":2,"sample_orders":[{"id":"20084626","sku":"FTA90859-TRA-AB","name":"Chris Nguyen","city":"Hilliard","state":"Ohio","zip":"43026","cbm":1.271,"cbm_src":"kit_CW","lbs":379.0,"warn":true,"lm_cost":230},{"id":"20083894","sku":"FBD90835-IVY-AB-KG","name":"Benjamin Harper","city":"Columbus","state":"Ohio","zip":"43230","cbm":1.77,"cbm_src":"kit_CW","lbs":240.0,"warn":false,"lm_cost":130},{"id":"20083869","sku":"999700046","name":"Jacqueline Sanders","city":"Columbus","state":"Ohio","zip":"43209","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20083469","sku":"FSE90953-SAN-ABC","name":"Sadia Sheikh Abu","city":"Grove City","state":"Ohio","zip":"43123","cbm":3.94,"cbm_src":"kit_CW","lbs":341.7,"warn":true,"lm_cost":230},{"id":"20078003","sku":"014775920","name":"Keyona Armstead","city":"Cincinnati","state":"Ohio","zip":"45231","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]},{"id":"U197","name":"197 Louisville","city":"Louisville","state":"KY","zip":"40214","orders":5,"units":6,"cbm":6.41,"cbm_true":4.27,"cbm_est":2.14,"lbs":897.2,"third_man":2,"sample_orders":[{"id":"20085040","sku":"013841740","name":"Damarys Alarcon","city":"Bowling green","state":"Kentucky","zip":"42101","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20084860","sku":"FSE90953-BLK-C","name":"Stacy  Martin","city":"Louisville","state":"Kentucky","zip":"40243","cbm":1.437,"cbm_src":"sku_DG","lbs":92.6,"warn":false,"lm_cost":130},{"id":"20082701","sku":"FBU16846-CBK","name":"Haley Terrell","city":"Louisville","state":"Kentucky","zip":"40220","cbm":1.076,"cbm_src":"sku_DG","lbs":335.0,"warn":true,"lm_cost":230},{"id":"20082083","sku":"010544562","name":"Barbara Bryant","city":"Louisville","state":"Kentucky","zip":"40245","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20079537","sku":"FCB16614-SAN","name":"Candice Baise","city":"BOWLING GREEN","state":"Kentucky","zip":"42101","cbm":1.753,"cbm_src":"sku_DG","lbs":469.6,"warn":true,"lm_cost":230}]},{"id":"U173","name":"173 Indianapolis","city":"Indianapolis","state":"IN","zip":"46219","orders":8,"units":9,"cbm":14.92,"cbm_true":13.49,"cbm_est":1.43,"lbs":1377.6,"third_man":3,"sample_orders":[{"id":"20088843","sku":"999942759","name":"Glenn Murff","city":"Indianapolis","state":"Indiana","zip":"46226","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20088031","sku":"GWM16467-GOD","name":"DeLisa Walker","city":"Fishers","state":"Indiana","zip":"46037","cbm":0.355,"cbm_src":"sku_DG","lbs":49.7,"warn":false,"lm_cost":130},{"id":"20087839","sku":"FSE90953-BLK-ABC","name":"Ayreoana Tucker","city":"Indianapolis ","state":"Indiana","zip":"46205","cbm":3.934,"cbm_src":"kit_CW","lbs":317.4,"warn":true,"lm_cost":230},{"id":"20087501","sku":"FSE90953-BLK-AB","name":"Natisha Coleman","city":"Fishers","state":"Indiana","zip":"46037","cbm":2.497,"cbm_src":"kit_CW","lbs":224.8,"warn":false,"lm_cost":130},{"id":"20087416","sku":"FSE90953-SAN-AB2C","name":"Keyya Grice","city":"Indianapolis ","state":"Indiana","zip":"46229","cbm":3.94,"cbm_src":"kit_CW","lbs":341.7,"warn":true,"lm_cost":230},{"id":"20086723","sku":"011956750","name":"Felicia  Downton","city":"Westfield","state":"Indiana","zip":"46074","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]},{"id":"U113","name":"113 Troy","city":"Troy","state":"MI","zip":"48083","orders":8,"units":8,"cbm":12.24,"cbm_true":10.46,"cbm_est":1.78,"lbs":1118.2,"third_man":3,"sample_orders":[{"id":"20089168","sku":"HRU14657-IVY","name":"Jeffrey Geftos","city":"Grosse Ile","state":"Michigan","zip":"48138","cbm":0.172,"cbm_src":"sku_DG","lbs":82.5,"warn":false,"lm_cost":130},{"id":"20086846","sku":"FBD90881-IVY-AB-KG","name":"Susan C Bork MD","city":"Bloomfield Hills","state":"Michigan","zip":"48304","cbm":2.054,"cbm_src":"kit_CW","lbs":326.9,"warn":true,"lm_cost":230},{"id":"20085079","sku":"999509557","name":"Ashton Boss","city":"Harrison Twp","state":"Michigan","zip":"48045","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20082996","sku":"FSE90953-SAN-AB2C","name":"Brittany Thompson","city":"Dearborn","state":"Michigan","zip":"48126","cbm":3.94,"cbm_src":"kit_CW","lbs":341.7,"warn":true,"lm_cost":230},{"id":"20082748","sku":"GWM16467-GOD","name":"Mohammed Al-Hameed","city":"Bloomfield Hills","state":"Michigan","zip":"48302","cbm":0.355,"cbm_src":"sku_DG","lbs":49.7,"warn":false,"lm_cost":130},{"id":"20082425","sku":"011216073","name":"April Remson","city":"Southfield","state":"Michigan","zip":"48076","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]},{"id":"U141","name":"141 Grand Rapids","city":"Byron Center","state":"MI","zip":"49315","orders":1,"units":1,"cbm":0.22,"cbm_true":0.22,"cbm_est":0,"lbs":125.4,"third_man":0,"sample_orders":[{"id":"20079417","sku":"HRU14658-IVY","name":"Lynn New","city":"Muskegon","state":"Michigan","zip":"49441","cbm":0.223,"cbm_src":"sku_DG","lbs":125.4,"warn":false,"lm_cost":130}]},{"id":"U196","name":"196 Cleveland","city":"Cleveland","state":"OH","zip":"44125","orders":4,"units":6,"cbm":3.77,"cbm_true":1.27,"cbm_est":2.5,"lbs":379.0,"third_man":1,"sample_orders":[{"id":"20085823","sku":"FTA90859-TRA-AB","name":"Jacqueline Goler","city":"Cleveland","state":"Ohio","zip":"44124","cbm":1.271,"cbm_src":"kit_CW","lbs":379.0,"warn":true,"lm_cost":230},{"id":"20083908","sku":"999093957","name":"Tracey Rezak","city":"Cleveland","state":"Ohio","zip":"44114","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20082346","sku":"630257824","name":"Kimberly West","city":"Cleveland","state":"Ohio","zip":"44105","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20079870","sku":"010544562","name":"Lisa Miller","city":"Dublin","state":"Ohio","zip":"43016","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]}],"total_orders":31,"total_units":35,"total_cbm":45.956,"total_lbs":4858.1,"cbm_true":36.69,"cbm_est":9.27,"miles":2381,"drive_h":43.3,"stop_h":12,"total_h":55.3,"days":6,"legs":[{"from":"WH","to":"Columbus","miles":1249,"drive_hrs":22.7},{"from":"Columbus","to":"Louisville","miles":233,"drive_hrs":4.2},{"from":"Louisville","to":"Indianapolis","miles":139,"drive_hrs":2.5},{"from":"Indianapolis","to":"Troy","miles":307,"drive_hrs":5.6},{"from":"Troy","to":"Byron Center","miles":165,"drive_hrs":3.0},{"from":"Byron Center","to":"Cleveland","miles":287,"drive_hrs":5.2}],"hwy":["I-65","I-70","I-71"],"ftl_cost":6308.74,"lm_cost":5130,"total_cost":11438.74,"cost_per_order":368.99,"rate_per_mi":2.65,"third_man":11,"wh_city":"Houston TX","wh_lat":29.6297,"wh_lng":-95.4952,"route_notes":"HO-05 Ohio + Great Lakes · I-65 → I-70 → I-71","need_cbm":0},{"id":17,"wh":"HOU","corridor":"HO-06 Midwest + TN","status":"DISPATCH","load_pct":83.5,"stops":[{"id":"U176","name":"176 Chicago","city":"Aurora","state":"IL","zip":"60502","orders":20,"units":21,"cbm":24.06,"cbm_true":20.85,"cbm_est":3.21,"lbs":3129.4,"third_man":7,"sample_orders":[{"id":"20088147","sku":"GWM16467-GOD","name":"Sara Berg","city":"Wilmette","state":"Illinois","zip":"60091","cbm":0.355,"cbm_src":"sku_DG","lbs":49.7,"warn":false,"lm_cost":130},{"id":"20087828","sku":"FAR16834-TDV","name":"Glenda Jamison Curti","city":"Olympia Fields","state":"Illinois","zip":"60461","cbm":1.336,"cbm_src":"sku_DG","lbs":116.0,"warn":false,"lm_cost":130},{"id":"20087718","sku":"750208349","name":"DeBorah McClain","city":"Chicago","state":"Illinois","zip":"60605","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20085152","sku":"FAR16841-ZBR","name":"Jessica Smith","city":"Chicago","state":"Illinois","zip":"60614","cbm":0.614,"cbm_src":"sku_DG","lbs":40.0,"warn":false,"lm_cost":130},{"id":"20084850","sku":"010544562","name":"Erica H Reggie","city":"Hinsdale","state":"Illinois","zip":"60521","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20084604","sku":"999974441","name":"Martrina Smith","city":"Chicago ","state":"Illinois","zip":"60633","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]},{"id":"U111","name":"111 Waukesha","city":"Waukesha","state":"WI","zip":"53188","orders":2,"units":2,"cbm":3.52,"cbm_true":3.52,"cbm_est":0,"lbs":568.5,"third_man":1,"sample_orders":[{"id":"20087885","sku":"FSE90886-WTE-AB","name":"Gay Strand","city":"Racine","state":"Wisconsin","zip":"53402","cbm":1.752,"cbm_src":"kit_CW","lbs":328.5,"warn":true,"lm_cost":230},{"id":"20086489","sku":"FBD90835-IVY-AB-KG","name":"Julie Barden","city":"Hartland","state":"Wisconsin","zip":"53029","cbm":1.77,"cbm_src":"kit_CW","lbs":240.0,"warn":false,"lm_cost":130}]},{"id":"U128","name":"128 La Vergne","city":"Mt Juliet","state":"TN","zip":"37122","orders":8,"units":8,"cbm":13.19,"cbm_true":11.76,"cbm_est":1.43,"lbs":1584.2,"third_man":3,"sample_orders":[{"id":"20089253","sku":"FBD90835-GRY-AB-KG","name":"Lauren Gardner","city":"Nashville","state":"Tennessee","zip":"37209","cbm":1.77,"cbm_src":"kit_CW","lbs":263.0,"warn":true,"lm_cost":230},{"id":"20089166","sku":"FSE90891-OTM-ABCD-R","name":"Lauren Gardner","city":"Nashville","state":"Tennessee","zip":"37209","cbm":5.025,"cbm_src":"kit_CW","lbs":418.9,"warn":true,"lm_cost":230},{"id":"20087664","sku":"FTA90880-OAK-AB","name":"Julianne Colbert","city":"Brentwood","state":"Tennessee","zip":"37027","cbm":1.188,"cbm_src":"kit_CW","lbs":401.7,"warn":true,"lm_cost":230},{"id":"20087520","sku":"FSE90953-SAN-AB","name":"Deanne McKissick","city":"Nashville","state":"Tennessee","zip":"37206","cbm":2.49,"cbm_src":"kit_CW","lbs":224.9,"warn":false,"lm_cost":130},{"id":"20082928","sku":"FCT16594-VIO","name":"Amber Knowlton","city":"Nashville","state":"Tennessee","zip":"37203","cbm":0.934,"cbm_src":"sku_DG","lbs":226.0,"warn":false,"lm_cost":130},{"id":"20082204","sku":"999055707","name":"Barbara Fritch","city":"Nashville","state":"Tennessee","zip":"37215","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]},{"id":"U045","name":"045 Chattanooga","city":"Chattanooga","state":"TN","zip":"37311","orders":3,"units":3,"cbm":5.37,"cbm_true":3.94,"cbm_est":1.43,"lbs":341.7,"third_man":1,"sample_orders":[{"id":"20088670","sku":"011403404","name":"Vernisa Thomas","city":"Apison","state":"Tennessee","zip":"37302","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20087207","sku":"999942759","name":"Rochelle Poncin","city":"Ellijay","state":"Georgia","zip":"30540","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20086140","sku":"FSE90953-SAN-ABC","name":"Ngowo Nasah","city":"Chattanooga","state":"Tennessee","zip":"37421","cbm":3.94,"cbm_src":"kit_CW","lbs":341.7,"warn":true,"lm_cost":230}]}],"total_orders":33,"total_units":34,"total_cbm":46.132,"total_lbs":5623.8,"cbm_true":40.08,"cbm_est":6.05,"miles":2002,"drive_h":36.4,"stop_h":8,"total_h":44.4,"days":5,"legs":[{"from":"WH","to":"Aurora","miles":1164,"drive_hrs":21.2},{"from":"Aurora","to":"Waukesha","miles":108,"drive_hrs":2.0},{"from":"Waukesha","to":"Mt Juliet","miles":599,"drive_hrs":10.9},{"from":"Mt Juliet","to":"Chattanooga","miles":131,"drive_hrs":2.4}],"hwy":["I-65","I-57","I-24"],"ftl_cost":5305.71,"lm_cost":5490,"total_cost":10795.71,"cost_per_order":327.14,"rate_per_mi":2.65,"third_man":12,"wh_city":"Houston TX","wh_lat":29.6297,"wh_lng":-95.4952,"route_notes":"HO-06 Midwest + TN · I-65 → I-57 → I-24","need_cbm":0},{"id":18,"wh":"HOU","corridor":"HO-07 New England","status":"HOLD","load_pct":24.7,"stops":[{"id":"U107","name":"107 South Easton","city":"South Easton","state":"MA","zip":"02375","orders":11,"units":16,"cbm":11.89,"cbm_true":6.54,"cbm_est":5.35,"lbs":802.0,"third_man":2,"sample_orders":[{"id":"20088120","sku":"621085354","name":"Val Jantzen","city":"Boston","state":"Massachusetts","zip":"02118","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20087238","sku":"014916025","name":"Arnis Berger","city":"Lexington","state":"Massachusetts","zip":"02420","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20086867","sku":"GWM16467-GOD","name":"Marjorie Nelson","city":"Brockton","state":"Massachusetts","zip":"02302","cbm":0.355,"cbm_src":"sku_DG","lbs":49.7,"warn":false,"lm_cost":130},{"id":"20086268","sku":"FBD90835-GRY-AB-KG","name":"Danielle Fortin","city":"Marblehead","state":"Massachusetts","zip":"01945","cbm":1.77,"cbm_src":"kit_CW","lbs":263.0,"warn":true,"lm_cost":230},{"id":"20084067","sku":"GCV16563-MUL","name":"Brigitte Owens","city":"Oak Bluffs","state":"Massachusetts","zip":"02557","cbm":0.227,"cbm_src":"sku_DG","lbs":19.3,"warn":false,"lm_cost":130},{"id":"20083392","sku":"014916025","name":"ERICA SOSCIA","city":"Brighton de Boston","state":"Massachusetts","zip":"02135","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]},{"id":"U148","name":"148 Albany","city":"Schenectady","state":"NY","zip":"12303","orders":2,"units":2,"cbm":1.43,"cbm_true":0,"cbm_est":1.43,"lbs":0.0,"third_man":0,"sample_orders":[{"id":"20078364","sku":"999666728","name":"Tasheim Stratton","city":"FORT EDWARD","state":"New York","zip":"12828","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20078044","sku":"011216073","name":"Kimberly Ruffin","city":"Albany","state":"New York","zip":"12209","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]},{"id":"U123","name":"123 Rochester","city":"Fairport","state":"NY","zip":"14450","orders":1,"units":1,"cbm":0.35,"cbm_true":0,"cbm_est":0.35,"lbs":0.0,"third_man":0,"sample_orders":[{"id":"20087907","sku":"999509557","name":"Caroline Dalton","city":"Fairport","state":"New York","zip":"14450","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]}],"total_orders":14,"total_units":19,"total_cbm":13.67,"total_lbs":802.0,"cbm_true":6.54,"cbm_est":7.13,"miles":2419,"drive_h":44.0,"stop_h":6,"total_h":50.0,"days":5,"legs":[{"from":"WH","to":"South Easton","miles":2006,"drive_hrs":36.5},{"from":"South Easton","to":"Schenectady","miles":192,"drive_hrs":3.5},{"from":"Schenectady","to":"Fairport","miles":222,"drive_hrs":4.0}],"hwy":["I-95","I-90","I-87"],"ftl_cost":7499.53,"lm_cost":2020,"total_cost":9519.53,"cost_per_order":679.97,"rate_per_mi":3.1,"third_man":2,"wh_city":"Houston TX","wh_lat":29.6297,"wh_lng":-95.4952,"route_notes":"HO-07 New England · I-95 → I-90 → I-87","need_cbm":18.83},{"id":19,"wh":"HOU","corridor":"HO-08 Central Plains","status":"HOLD","load_pct":43.7,"stops":[{"id":"U157","name":"157 Oklahoma City","city":"Oklahoma City","state":"OK","zip":"73179","orders":5,"units":6,"cbm":4.59,"cbm_true":3.52,"cbm_est":1.07,"lbs":745.0,"third_man":2,"sample_orders":[{"id":"20089595","sku":"FAR16841-ZBR","name":"Alaysha Mason","city":"Guthrie","state":"Oklahoma","zip":"73043","cbm":0.614,"cbm_src":"sku_DG","lbs":40.0,"warn":false,"lm_cost":130},{"id":"20084529","sku":"FBD90883-OTM-AB-KG","name":"Hannah Lattea","city":"Amarillo","state":"Texas","zip":"79119","cbm":1.276,"cbm_src":"kit_CW","lbs":276.3,"warn":true,"lm_cost":230},{"id":"20084311","sku":"014328135","name":"Shawn Pickrell","city":"Littlefield","state":"Texas","zip":"79339","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20084084","sku":"GWM16467-GOD","name":"Karla Schmitz","city":"Amarillo","state":"Texas","zip":"79119","cbm":0.355,"cbm_src":"sku_DG","lbs":49.7,"warn":false,"lm_cost":130},{"id":"20081047","sku":"FTA90859-TRA-AB","name":"Hannah Lattea","city":"Amarillo","state":"Texas","zip":"79119","cbm":1.271,"cbm_src":"kit_CW","lbs":379.0,"warn":true,"lm_cost":230}]},{"id":"U160","name":"160 Tulsa","city":"Tulsa","state":"OK","zip":"74134","orders":2,"units":2,"cbm":3.68,"cbm_true":3.68,"cbm_est":0,"lbs":626.6,"third_man":1,"sample_orders":[{"id":"20081210","sku":"FTA90880-OAK-AB","name":"Mohamad Okda","city":"Bixby","state":"Oklahoma","zip":"74008","cbm":1.188,"cbm_src":"kit_CW","lbs":401.7,"warn":true,"lm_cost":230},{"id":"20079735","sku":"FSE90953-SAN-AB","name":"Constance Brown-Phil","city":"Broken Arrow","state":"Oklahoma","zip":"74012","cbm":2.49,"cbm_src":"kit_CW","lbs":224.9,"warn":false,"lm_cost":130}]},{"id":"U198","name":"198 Kansas City","city":"Kansas City","state":"MO","zip":"64116","orders":5,"units":9,"cbm":9.61,"cbm_true":7.47,"cbm_est":2.14,"lbs":738.5,"third_man":1,"sample_orders":[{"id":"20085419","sku":"FSE90953-BLK-AB","name":"Denise Spencer","city":"St Louis","state":"Missouri","zip":"63135","cbm":2.497,"cbm_src":"kit_CW","lbs":224.8,"warn":false,"lm_cost":130},{"id":"20084994","sku":"LR-SET8045-2P-PSG","name":"Nicole Hamlett","city":"St Louis","state":"Missouri","zip":"63141","cbm":1.031,"cbm_src":"kit_CW","lbs":172.0,"warn":false,"lm_cost":130},{"id":"20081644","sku":"013119267","name":"Amy Krause","city":"Overland Park","state":"Kansas","zip":"66223","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20079190","sku":"010966865","name":"David Kley","city":"Saint Louis","state":"Missouri","zip":"63103","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20078185","sku":"FSE90953-SAN-ABC","name":"Samantha Omerovic","city":"St Louis","state":"Missouri","zip":"63129","cbm":3.94,"cbm_src":"kit_CW","lbs":341.7,"warn":true,"lm_cost":230}]},{"id":"U144","name":"144 Olathe","city":"Grandview","state":"MO","zip":"64030","orders":1,"units":1,"cbm":0.36,"cbm_true":0.36,"cbm_est":0,"lbs":49.7,"third_man":0,"sample_orders":[{"id":"20083940","sku":"GWM16467-GOD","name":"Beth Steele","city":"Omaha","state":"Nebraska","zip":"68130","cbm":0.355,"cbm_src":"sku_DG","lbs":49.7,"warn":false,"lm_cost":130}]},{"id":"U177","name":"177 Cedar Rapids","city":"Cedar Rapids","state":"IA","zip":"52404","orders":1,"units":1,"cbm":1.0,"cbm_true":1.0,"cbm_est":0,"lbs":235.9,"third_man":0,"sample_orders":[{"id":"20081894","sku":"FBU16578-BLK","name":"Mary Minnis","city":"East Moline","state":"Illinois","zip":"61244","cbm":1.003,"cbm_src":"sku_DG","lbs":235.9,"warn":false,"lm_cost":130}]},{"id":"U073","name":"073 Plymouth","city":"Brooklyn Park","state":"MN","zip":"55445","orders":6,"units":7,"cbm":4.93,"cbm_true":3.5,"cbm_est":1.43,"lbs":800.3,"third_man":1,"sample_orders":[{"id":"20084993","sku":"011679460","name":"RACHEL Nevell","city":"Shakopee","state":"Minnesota","zip":"55379","cbm":1.07,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20084490","sku":"GWM16467-GOD","name":"Charity Wyatt","city":"Medina","state":"Minnesota","zip":"55340","cbm":0.355,"cbm_src":"sku_DG","lbs":49.7,"warn":false,"lm_cost":130},{"id":"20083907","sku":"FTA90880-OAK-AB","name":"Amari Ziton","city":"Afton","state":"Minnesota","zip":"55001","cbm":1.188,"cbm_src":"kit_CW","lbs":401.7,"warn":true,"lm_cost":230},{"id":"20082960","sku":"999083855","name":"albert borger","city":"Shakopee","state":"Minnesota","zip":"55379","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130},{"id":"20079966","sku":"HRU16290-CHA","name":"Justin Scharr","city":"Minneapolis","state":"Minnesota","zip":"55403","cbm":0.189,"cbm_src":"sku_DG","lbs":108.9,"warn":false,"lm_cost":130},{"id":"20078502","sku":"FBD90835-IVY-AB-KG","name":"Ryan Keuler","city":"CHASKA","state":"Minnesota","zip":"55318","cbm":1.77,"cbm_src":"kit_CW","lbs":240.0,"warn":false,"lm_cost":130}]}],"total_orders":20,"total_units":26,"total_cbm":24.157,"total_lbs":3196.1,"cbm_true":19.52,"cbm_est":4.63,"miles":1584,"drive_h":28.8,"stop_h":12,"total_h":40.8,"days":4,"legs":[{"from":"WH","to":"Oklahoma City","miles":523,"drive_hrs":9.5},{"from":"Oklahoma City","to":"Tulsa","miles":145,"drive_hrs":2.6},{"from":"Tulsa","to":"Kansas City","miles":276,"drive_hrs":5.0},{"from":"Kansas City","to":"Grandview","miles":21,"drive_hrs":0.4},{"from":"Grandview","to":"Cedar Rapids","miles":327,"drive_hrs":5.9},{"from":"Cedar Rapids","to":"Brooklyn Park","miles":291,"drive_hrs":5.3}],"hwy":["I-35","I-44","I-70","I-29"],"ftl_cost":4197.04,"lm_cost":3100,"total_cost":7297.04,"cost_per_order":364.85,"rate_per_mi":2.65,"third_man":5,"wh_city":"Houston TX","wh_lat":29.6297,"wh_lng":-95.4952,"route_notes":"HO-08 Central Plains · I-35 → I-44 → I-70 → I-29","need_cbm":8.34},{"id":20,"wh":"HOU","corridor":"HO-09 SE Misc","status":"HOLD","load_pct":0.6,"stops":[{"id":"U134","name":"134 Fargo","city":"Fargo","state":"ND","zip":"58102","orders":1,"units":1,"cbm":0.35,"cbm_true":0,"cbm_est":0.35,"lbs":0.0,"third_man":0,"sample_orders":[{"id":"20086891","sku":"999370709","name":"Carrie Jackson","city":"Grand Forks","state":"North Dakota","zip":"58201","cbm":0.355,"cbm_src":"fallback","lbs":0.0,"warn":false,"lm_cost":130}]}],"total_orders":1,"total_units":1,"total_cbm":0.355,"total_lbs":0.0,"cbm_true":0,"cbm_est":0.35,"miles":1492,"drive_h":27.1,"stop_h":2,"total_h":29.1,"days":3,"legs":[{"from":"WH","to":"Fargo","miles":1492,"drive_hrs":27.1}],"hwy":["I-20","I-65"],"ftl_cost":3954.85,"lm_cost":130,"total_cost":4084.85,"cost_per_order":4084.85,"rate_per_mi":2.65,"third_man":0,"wh_city":"Houston TX","wh_lat":29.6297,"wh_lng":-95.4952,"route_notes":"HO-09 SE Misc · I-20 → I-65","need_cbm":32.15}];
@@ -1312,7 +1426,7 @@ function buildRoute(id){
       +'<div class="tt-detail-grid">'+ttGrid+'</div>'
     +'</div>'
     +'<div class="sh" style="margin-bottom:12px"><div><div class="sh-t">Stop-by-Stop Detail</div><div class="sh-s">'+t.stops.length+' stops \u00b7 click to expand orders</div></div></div>'
-    +'<div class="stops-list">'+stopCards+'</div>';
+    +'<div style="background:var(--bg2);border:1px solid var(--b1);border-radius:var(--rad-xl);padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px">'+'<div>'+'<div style="font-size:13px;font-weight:600;color:var(--t1)">📄 Carrier RFQ</div>'+'<div style="font-size:11px;color:var(--t3);margin-top:2px">Generate a quotation request for this lane · carriers fill in their rate and return</div>'+'</div>'+'<div style="display:flex;gap:8px">'+'<button class="btn" style="background:var(--success-bg);color:var(--success-t);border-color:var(--success);font-size:13px;padding:8px 16px;font-weight:600" onclick="exportRFQ('+t.id+')">📄 Generate RFQ</button>'+'</div>'+'</div>'+'<div class="sh" style="margin-bottom:12px"><div><div class="sh-t">Stop-by-Stop Detail</div><div class="sh-s">'+t.stops.length+' stops · click to expand orders</div></div></div>'+'<div class="stops-list">'+stopCards+'</div>';
 
   document.getElementById('route-content').innerHTML=content;
 }
@@ -1456,13 +1570,13 @@ function fillWarehouse(){
 
 function skuRow(order='',pkgs='',weight='',ps='',sku='',desc='',qty=''){
   return`<tr>
-    <td><input value="${order}" placeholder="Order #"></td>
-    <td><input value="${pkgs}" placeholder="0" style="width:50px"></td>
-    <td><input value="${weight}" placeholder="0" style="width:70px"></td>
-    <td><input value="${ps}" placeholder="P/S" style="width:50px"></td>
-    <td><input value="${sku}" placeholder="SKU-XXXXX"></td>
-    <td><input value="${desc}" placeholder="Description"></td>
-    <td><input value="${qty}" placeholder="1" style="width:40px"></td>
+    <td><input title="Customer Order #" value="${order}" placeholder="Order #" name="order-num"></td>
+    <td><input title="Number of packages" value="${pkgs}" placeholder="0" name="pkgs" style="width:50px"></td>
+    <td><input title="Weight (lbs)" value="${weight}" placeholder="0" name="weight" style="width:70px"></td>
+    <td><input title="Pallet or Slip" value="${ps}" placeholder="P/S" name="pallet-slip" style="width:50px"></td>
+    <td><input title="SKU" value="${sku}" placeholder="SKU-XXXXX" name="sku"></td>
+    <td><input title="Description" value="${desc}" placeholder="Description" name="description"></td>
+    <td><input title="Quantity" value="${qty}" placeholder="1" name="qty" style="width:40px"></td>
     <td><button onclick="removeRow(this)" style="background:none;border:none;color:var(--danger-t);cursor:pointer;font-size:14px">×</button></td>
   </tr>`;
 }
@@ -1471,11 +1585,11 @@ function addSKURow(){ document.getElementById('sku-tbody').insertAdjacentHTML('b
 
 function addDAFRow(){
   document.getElementById('daf-tbody').insertAdjacentHTML('beforeend',`<tr>
-    <td><input placeholder="0" style="width:50px"></td>
-    <td><input placeholder="0 lbs" style="width:70px"></td>
-    <td><input placeholder="Product name"></td>
-    <td><input placeholder="SKU-XXXXX"></td>
-    <td><input placeholder="1" style="width:40px"></td>
+    <td><input title="Number of packages" placeholder="0" name="daf-pkgs" style="width:50px"></td>
+    <td><input title="Weight (lbs)" placeholder="0 lbs" name="daf-weight" style="width:70px"></td>
+    <td><input title="Product name" placeholder="Product name" name="daf-desc"></td>
+    <td><input title="SKU" placeholder="SKU-XXXXX" name="daf-sku"></td>
+    <td><input title="Quantity" placeholder="1" name="daf-qty" style="width:40px"></td>
     <td><button onclick="removeRow(this)" style="background:none;border:none;color:var(--danger-t);cursor:pointer;font-size:14px">×</button></td>
   </tr>`);
 }
@@ -1820,7 +1934,7 @@ function printBOL(){
     <title>${isDaf?'Z Gallerie Delivery Acknowledgment':'Z Gallerie Bill of Lading'}</title>
     <style>
       body{margin:0;padding:0;background:#fff}
-      @page{size:A4;margin:15mm}
+      @page{size:A4;margin:25.4mm 31.8mm}
       @media print{body{margin:0}}
     </style>
   </head><body>${html}</body></html>`);
@@ -2162,7 +2276,7 @@ function printDeliveryForm() {
   var html = buildPrintHTML();
   var w = window.open('','_blank','width=900,height=700');
   w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Z Gallerie White Glove Delivery Order</title>'
-    +'<style>body{margin:20px;font-family:Arial,sans-serif;font-size:11px;color:#000}@page{size:A4;margin:15mm}@media print{body{margin:0}}</style>'
+    +'<style>body{margin:20px;font-family:Arial,sans-serif;font-size:11px;color:#000}@page{size:A4;margin:25.4mm 31.8mm}@media print{body{margin:0}}</style>'
     +'</head><body>'+html+'</body></html>');
   w.document.close();
   setTimeout(function(){w.print();},500);
@@ -2496,6 +2610,7 @@ function getHubStops() {
 // Auto-populate stops when a truck BOL is opened
 var _bolOrigOpenBOL = (typeof openBOLforTruck === 'function') ? openBOLforTruck : null;
 openBOLforTruck = function(truckId, btn) {
+  truckId = +truckId;
   if (_bolOrigOpenBOL) _bolOrigOpenBOL(truckId, btn);
   var list = document.getElementById('hub-stops-list');
   if (!list) return;
@@ -2556,6 +2671,600 @@ document.addEventListener('DOMContentLoaded', function() {
   if (list && list.children.length === 0) addHubStop();
 })();
 
+
+// ── RFQ Generator ─────────────────────────────────────────────────────────────
+var _rfqCurrentTruckId = null;
+
+var TRUCK_TYPE_NAMES = [
+  {cm:7.1,  name:'Cargo Van'},
+  {cm:14.2, name:'Sprinter Van'},
+  {cm:22.6, name:'16 ft Box Truck'},
+  {cm:39.6, name:'26 ft Box Truck'},
+  {cm:51.0, name:'48 ft Straight Truck'},
+  {cm:79.3, name:'53 ft Dry Van'},
+];
+function getRFQTruckType(cbm) {
+  for (var i=0; i<TRUCK_TYPE_NAMES.length; i++) {
+    if (cbm < TRUCK_TYPE_NAMES[i].cm) return TRUCK_TYPE_NAMES[i].name;
+  }
+  return '53 ft Dry Van';
+}
+
+function getRFQData(truckId) {
+  truckId = +truckId;
+  var t = TRUCKS.find(function(x){return x.id===truckId;});
+  if (!t) return null;
+  var wh = t.wh;
+  var whAddr = wh==='LA'
+    ? {city:'Gardena, CA', addr:'1855 W 139th St, Gardena, CA 90249'}
+    : {city:'Houston, TX',  addr:'10301 S Post Oak Rd, Houston, TX 77035'};
+  var truckType = getRFQTruckType(t.total_cbm);
+  var cbf = Math.round(t.total_cbm * 35.315);
+  var refRate = t.rate_per_mi;
+  var refTotal = Math.round(t.miles * refRate);
+
+  var stops = t.stops.map(function(s,i) {
+    var leg = t.legs[i] || {};
+    return {
+      num:     i+1,
+      hub:     s.id,
+      name:    s.name,
+      city:    s.city,
+      state:   s.state,
+      zip:     s.zip,
+      orders:  s.orders,
+      units:   s.units,
+      cbm:     s.cbm.toFixed(2),
+      lbs:     s.lbs ? s.lbs.toFixed(0) : '0',
+      units:   s.units || 0,
+      legMi:   leg.miles || 0,
+      legHrs:  leg.drive_hrs || 0,
+    };
+  });
+
+  return {
+    truckId:   t.id,
+    corridor:  t.corridor,
+    status:    t.status,
+    wh:        wh,
+    whCity:    whAddr.city,
+    whAddr:    whAddr.addr,
+    miles:     t.miles,
+    cbm:       t.total_cbm.toFixed(1),
+    cbf:       cbf,
+    lbs:       t.total_lbs ? t.total_lbs.toFixed(0) : '0',
+    orders:    t.total_orders,
+    units:     t.total_units,
+    days:      t.days,
+    thirdMan:  t.third_man,
+    hwy:       (t.hwy||[]).join(' → '),
+    truckType: truckType,
+    refRate:   refRate,
+    refTotal:  refTotal,
+    stops:     stops,
+    driveH:    t.drive_h,
+    stopH:     t.stop_h,
+  };
+}
+
+function previewRFQ(truckId) {
+  exportRFQ(truckId);
+}
+
+
+function exportRFQfromModal() {
+  if (_rfqCurrentTruckId) exportRFQ(_rfqCurrentTruckId);
+}
+
+function exportRFQ(truckId) {
+  truckId = +truckId;
+  var d = getRFQData(truckId);
+  if (!d) return;
+
+  var today = new Date();
+  var dateStr = today.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  var dueDate = new Date(today.getTime() + 5*24*60*60*1000)
+    .toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  var validDate = new Date(today.getTime() + 30*24*60*60*1000)
+    .toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  var refNo = 'ZG-RFQ-' + String(d.truckId).padStart(2,'0') + '-' + today.getFullYear()
+    + String(today.getMonth()+1).padStart(2,'0') + String(today.getDate()).padStart(2,'0');
+
+  // Build stop rows
+  var stopRows = d.stops.map(function(s,i) {
+    return '<tr style="'+(i%2===0?'background:#F9FAFB':'background:#FFFFFF')+'">'
+      +'<td style="padding:4px 5px;text-align:center;font-weight:600;color:#1F3864;border:1px solid #E5E7EB;white-space:nowrap">'+s.num+'</td>'
+      +'<td style="padding:4px 5px;font-family:monospace;font-weight:700;color:#4F46E5;border:1px solid #E5E7EB;white-space:nowrap">'+s.hub+'</td>'
+      +'<td style="padding:4px 5px;border:1px solid #E5E7EB;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+s.name+'</td>'
+      +'<td style="padding:4px 5px;border:1px solid #E5E7EB;word-break:break-word">'+s.city+', '+s.state+' '+s.zip+'</td>'
+      +'<td style="padding:4px 5px;text-align:center;border:1px solid #E5E7EB;white-space:nowrap">'+s.legMi+' mi</td>'
+      +'<td style="padding:4px 5px;text-align:center;border:1px solid #E5E7EB;white-space:nowrap">'+s.orders+'</td>'
+      +'<td style="padding:4px 5px;text-align:center;border:1px solid #E5E7EB;font-weight:600;white-space:nowrap">'+s.units+'</td>'
+      +'<td style="padding:4px 5px;text-align:center;border:1px solid #E5E7EB;white-space:nowrap">'+s.cbm+'</td>'
+      +'<td style="padding:4px 5px;text-align:center;border:1px solid #E5E7EB;white-space:nowrap">'+Number(s.lbs).toLocaleString()+'</td>'
+      +'</tr>';
+  }).join('');
+
+  // Checklist items per 49 CFR Part 371 / FMCSA
+  var checkItems = [
+    ['Active FMCSA Operating Authority (MC#)', '49 CFR § 365'],
+    ['Active DOT Registration', '49 CFR § 390.19'],
+    ['Cargo Liability Insurance — min $100,000', '49 CFR § 387.301'],
+    ['Public Liability Insurance — min $750,000', '49 CFR § 387.9'],
+    ['Driver holds valid CDL (Class A)', '49 CFR § 383'],
+    ['Driver compliant with Hours of Service rules', '49 CFR § 395'],
+    ['Vehicle passes FMCSA safety inspection', '49 CFR § 396'],
+    ['Drug & alcohol testing program in place', '49 CFR § 382'],
+    ['Electronic Logging Device (ELD) installed', '49 CFR § 395.8'],
+    ['Carrier agrees to provide real-time tracking', 'Shipper requirement'],
+  ];
+  var checkRows = checkItems.map(function(item) {
+    return '<tr>'
+      +'<td style="padding:6px 10px;border:1px solid #E5E7EB">☐</td>'
+      +'<td style="padding:6px 10px;border:1px solid #E5E7EB">'+item[0]+'</td>'
+      +'<td style="padding:6px 10px;text-align:center;color:#6B7280;font-size:11px;border:1px solid #E5E7EB">'+item[1]+'</td>'
+      +'</tr>';
+  }).join('');
+
+  var printHTML = '<!DOCTYPE html><html lang="en"><head>'
+    +'<meta charset="UTF-8">'
+    +'<title>RFQ '+refNo+'</title>'
+    +'<style>'
+    +'  * { box-sizing: border-box; margin: 0; padding: 0; }'
+    +'  body { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 11.5px; color: #111827; background: #fff; }'
+    +'  @page { size: A4; margin: 20mm 15mm; }'
+    +'  @media print { .no-print { display: none !important; } body { margin: 0; } }'
+    +'  .page { width: 100%; max-width: 100%; margin: 0; padding: 14px 16px; }'
+
+    // Header band
+    +'  .header-band { background: #1F3864; color: #fff; padding: 16px 20px; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0; width: 100%; }'
+    +'  .header-logo { font-size: 20px; font-weight: 800; letter-spacing: 1px; }'
+    +'  .header-sub { font-size: 11px; color: #93BBFD; margin-top: 3px; }'
+    +'  .header-right { text-align: right; font-size: 11px; }'
+    +'  .header-right .ref { font-size: 14px; font-weight: 700; color: #FCD34D; margin-bottom: 3px; }'
+    +'  .status-bar { background: #374151; padding: 7px 20px; display: flex; gap: 20px; font-size: 11px; color: #9CA3AF; margin-bottom: 20px; width: 100%; flex-wrap: wrap; }'
+    +'  .status-bar span { color: #F3F4F6; font-weight: 600; }'
+
+    // Sections
+    +'  .section { margin-bottom: 18px; page-break-inside: avoid; break-inside: avoid; }'
+    +'  .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #1F3864; border-bottom: 2px solid #1F3864; padding-bottom: 4px; margin-bottom: 10px; }'
+
+    // Info grid
+    +'  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }'
+    +'  .info-box { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 4px; padding: 10px 14px; page-break-inside: avoid; break-inside: avoid; }'
+    +'  .info-box-title { font-size: 10px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 7px; }'
+    +'  .info-row { display: flex; justify-content: space-between; font-size: 11px; padding: 2px 0; }'
+    +'  .info-row .label { color: #6B7280; }'
+    +'  .info-row .val { font-weight: 600; color: #111827; }'
+
+    // Rate box
+    +'  .rate-box { background: #FFF8E1; border: 2px solid #F59E0B; border-radius: 6px; padding: 14px 18px; margin-bottom: 18px; }'
+    +'  .rate-box-title { font-size: 11px; font-weight: 700; color: #92400E; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }'
+    +'  .rate-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }'
+    +'  .rate-cell { background: #fff; border: 1px solid #FCD34D; border-radius: 4px; padding: 8px 10px; text-align: center; }'
+    +'  .rate-cell .rc-label { font-size: 10px; color: #92400E; margin-bottom: 4px; }'
+    +'  .rate-cell .rc-val { font-size: 16px; font-weight: 700; color: #1F3864; }'
+    +'  .rate-cell.fill { background: #FEF3C7; border: 2px solid #F59E0B; }'
+    +'  .rate-cell.fill .rc-val { color: #92400E; font-size: 14px; }'
+    +'  .rate-cell.total { background: #EFF6FF; border: 2px solid #2563EB; }'
+    +'  .rate-cell.total .rc-val { color: #1D4ED8; }'
+
+    // Tables
+    +'  table { width: 100%; border-collapse: collapse; font-size: 9.5px; margin-bottom: 4px; page-break-inside: auto; table-layout: fixed; }'
+    +'  td, th { word-wrap: break-word; overflow: hidden; }'
+    +'  tr { page-break-inside: avoid; break-inside: avoid; }'
+    +'  th { background: #1F3864; color: #fff; padding: 5px 6px; text-align: left; font-size: 9px; letter-spacing: 0.3px; border: 1px solid #1F3864; }'
+    +'  th.center { text-align: center; }'
+
+    // Carrier info fillable
+    +'  .fill-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 18px; page-break-inside: avoid; break-inside: avoid; }'
+    +'  .fill-field { border: 1px solid #D1D5DB; border-radius: 4px; padding: 8px 10px; }'
+    +'  .fill-label { font-size: 9px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }'
+    +'  .fill-line { border-bottom: 1px solid #374151; height: 20px; }'
+
+    // Compliance
+    +'  .compliance-note { background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 4px; padding: 8px 12px; font-size: 10px; color: #166534; margin-bottom: 10px; page-break-inside: avoid; break-inside: avoid; }'
+
+    // Signature block
+    +'  .sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 10px; page-break-inside: avoid; break-inside: avoid; }'
+    +'  .sig-box { border: 1px solid #D1D5DB; border-radius: 4px; padding: 12px 14px; page-break-inside: avoid; break-inside: avoid; }'
+    +'  .sig-box-title { font-size: 10px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }'
+    +'  .sig-line { border-bottom: 1px solid #374151; height: 28px; margin-bottom: 6px; }'
+    +'  .sig-line-label { font-size: 9px; color: #9CA3AF; }'
+
+    // Footer
+    +'  .footer { border-top: 1px solid #E5E7EB; padding-top: 8px; margin-top: 24px; display: flex; justify-content: space-between; font-size: 9px; color: #9CA3AF; page-break-inside: avoid; break-inside: avoid; }'
+    +'</style></head><body><div class="page">'
+
+    // ── Header ──
+    +'<div class="header-band">'
+    +'  <div><div class="header-logo">Z GALLERIE HOME LLC</div>'
+    +'    <div class="header-sub">1855 W 139th St, Gardena CA 90249 &nbsp;|&nbsp; zgallerie.com</div>'
+    +'  </div>'
+    +'  <div class="header-right">'
+    +'    <div class="ref">RFQ: '+refNo+'</div>'
+    +'    <div>Issue Date: '+dateStr+'</div>'
+    +'    <div>Response Due: '+dueDate+'</div>'
+    +'    <div>Rate Valid Until: '+validDate+'</div>'
+    +'  </div>'
+    +'</div>'
+    +'<div class="status-bar">'
+    +'  <div>Load #: <span>T'+String(d.truckId).padStart(2,'0')+'</span></div>'
+    +'  <div>Corridor: <span>'+d.corridor+'</span></div>'
+    +'  <div>Origin: <span>'+d.whCity+'</span></div>'
+    +'  <div>Status: <span>'+d.status+'</span></div>'
+    +'  <div>Highways: <span>'+d.hwy+'</span></div>'
+    +'</div>'
+
+    // ── Lane + Cargo info ──
+    +'<div class="section">'
+    +'  <div class="section-title">Lane &amp; Cargo Information</div>'
+    +'  <div class="info-grid">'
+    +'    <div class="info-box">'
+    +'      <div class="info-box-title">Lane Details</div>'
+    +'      <div class="info-row"><span class="label">Total Miles</span><span class="val">'+d.miles.toLocaleString()+' mi</span></div>'
+    +'      <div class="info-row"><span class="label">HUB Stops</span><span class="val">'+d.stops.length+' stops</span></div>'
+    +'      <div class="info-row"><span class="label">Est. Transit</span><span class="val">'+d.days+' days</span></div>'
+    +'      <div class="info-row"><span class="label">Drive Time</span><span class="val">'+d.driveH+' hrs driving</span></div>'
+    +'      <div class="info-row"><span class="label">Unload Time</span><span class="val">'+d.stopH+' hrs at stops</span></div>'
+    +'      <div class="info-row"><span class="label">Highways</span><span class="val">'+d.hwy+'</span></div>'
+    +'    </div>'
+    +'    <div class="info-box">'
+    +'      <div class="info-box-title">Cargo Details</div>'
+    +'      <div class="info-row"><span class="label">Total Orders</span><span class="val">'+d.orders+' orders</span></div>'
+    +'      <div class="info-row"><span class="label">Total Units</span><span class="val">'+d.units+' units</span></div>'
+    +'      <div class="info-row"><span class="label">Volume</span><span class="val">'+d.cbm+' CBM / '+d.cbf+' CBF</span></div>'
+    +'      <div class="info-row"><span class="label">Total Weight</span><span class="val">'+Number(d.lbs).toLocaleString()+' lbs</span></div>'
+    +'      <div class="info-row"><span class="label">Third Man Req.</span><span class="val">'+d.thirdMan+' deliveries (&gt;250 lbs)</span></div>'
+    +'      <div class="info-row"><span class="label">Rec. Equipment</span><span class="val" style="color:#16A34A">'+d.truckType+'</span></div>'
+    +'    </div>'
+    +'  </div>'
+    +'</div>'
+
+    // ── Rate Submission ──
+    +'</div>'
+
+    // ── Carrier info ──
+    +'<div class="section">'
+    +'  <div class="section-title">Stop-by-Stop Route Detail</div>'
+    +'  <table>'
+    +'    <thead><tr>'
+    +'<th style="width:30px;text-align:center">Stop</th>'
+    +'<th style="width:44px">HUB Code</th>'
+    +'<th style="width:100px">HUB Name</th>'
+    +'<th style="width:140px">City / State / ZIP</th>'
+    +'<th style="width:46px;text-align:center">Leg Mi</th>'
+    +'<th style="width:44px;text-align:center">Orders</th>'
+    +'<th style="width:38px;text-align:center">Units</th>'
+    +'<th style="width:54px;text-align:center">CBM (m³)</th>'
+    +'<th style="width:58px;text-align:center">Wt (lbs)</th>'
+    +'    </tr></thead>'
+    +'    <tbody>'+stopRows+'</tbody>'
+    +'  </table>'
+    +'</div>'
+
+    +'<div class="section">'
+    +'  <div class="section-title">Carrier Selection — Internal Use Only</div>'
+    +'  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">'
+    +'    <div style="border:1px solid #D1D5DB;border-radius:4px;padding:10px 12px;background:#F9FAFB">'
+    +'      <div style="font-size:9px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Selected Carrier</div>'
+    +'      <div style="border-bottom:1px solid #374151;height:24px"></div>'
+    +'    </div>'
+    +'    <div style="border:1px solid #D1D5DB;border-radius:4px;padding:10px 12px;background:#F9FAFB">'
+    +'      <div style="font-size:9px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Agreed Rate ($/mi)</div>'
+    +'      <div style="border-bottom:1px solid #374151;height:24px"></div>'
+    +'    </div>'
+    +'    <div style="border:1px solid #D1D5DB;border-radius:4px;padding:10px 12px;background:#F9FAFB">'
+    +'      <div style="font-size:9px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Total Agreed Cost ($)</div>'
+    +'      <div style="border-bottom:1px solid #374151;height:24px"></div>'
+    +'    </div>'
+    +'    <div style="border:1px solid #D1D5DB;border-radius:4px;padding:10px 12px;background:#F9FAFB">'
+    +'      <div style="font-size:9px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Award Date</div>'
+    +'      <div style="border-bottom:1px solid #374151;height:24px"></div>'
+    +'    </div>'
+    +'    <div style="border:1px solid #D1D5DB;border-radius:4px;padding:10px 12px;background:#F9FAFB">'
+    +'      <div style="font-size:9px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Confirmed by (Z Gallerie)</div>'
+    +'      <div style="border-bottom:1px solid #374151;height:24px"></div>'
+    +'    </div>'
+    +'    <div style="border:1px solid #D1D5DB;border-radius:4px;padding:10px 12px;background:#F9FAFB">'
+    +'      <div style="font-size:9px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Load Reference #</div>'
+    +'      <div style="border-bottom:1px solid #374151;height:24px"></div>'
+    +'    </div>'
+    +'  </div>'
+    +'</div>'
+
+    +'<div class="section">'
+    +'  <div class="section-title">Carrier Information — Please Complete &amp; Return</div>'
+    +'  <div class="fill-grid">'
+    +'    <div class="fill-field"><div class="fill-label">Company / Legal Name</div><div class="fill-line"></div></div>'
+    +'    <div class="fill-field"><div class="fill-label">MC Number (FMCSA)</div><div class="fill-line"></div></div>'
+    +'    <div class="fill-field"><div class="fill-label">DOT Number</div><div class="fill-line"></div></div>'
+    +'    <div class="fill-field"><div class="fill-label">Primary Contact Name</div><div class="fill-line"></div></div>'
+    +'    <div class="fill-field"><div class="fill-label">Phone</div><div class="fill-line"></div></div>'
+    +'    <div class="fill-field"><div class="fill-label">Email</div><div class="fill-line"></div></div>'
+    +'    <div class="fill-field"><div class="fill-label">Equipment Available (type/count)</div><div class="fill-line"></div></div>'
+    +'    <div class="fill-field"><div class="fill-label">Earliest Pickup Date</div><div class="fill-line"></div></div>'
+    +'    <div class="fill-field"><div class="fill-label">Notes / Conditions</div><div class="fill-line"></div></div>'
+    +'  </div>'
+    +'</div>'
+
+    // ── FMCSA Compliance Checklist ──
+    +'<div class="section">'
+    +'  <div class="section-title">FMCSA Compliance Checklist</div>'
+    +'  <div class="compliance-note">Carrier must meet all applicable FMCSA and federal requirements. By signing below, carrier certifies compliance with all checked items. Ref: 49 CFR Subtitle B, Chapter III.</div>'
+    +'  <table>'
+    +'    <thead><tr>'
+    +'      <th style="width:32px" class="center">✓</th>'
+    +'      <th>Requirement</th>'
+    +'      <th style="width:120px" class="center">Regulation</th>'
+    +'    </tr></thead>'
+    +'    <tbody>'+checkRows+'</tbody>'
+    +'  </table>'
+    +'</div>'
+
+    // ── Terms ──
+    +'<div class="section">'
+    +'  <div class="section-title">Terms &amp; Conditions</div>'
+    +'  <ol style="padding-left:16px;font-size:11px;line-height:1.8;color:#374151">'
+    +'    <li><b>All-in Rate:</b> Quoted rate must include all fuel surcharges, tolls, and accessorial fees. No additional surcharges accepted without prior written approval from Z Gallerie.</li>'
+    +'    <li><b>Insurance:</b> Carrier must maintain cargo liability insurance of no less than $100,000 per occurrence and public liability of no less than $750,000, per 49 CFR § 387.9 and § 387.301. Certificate of Insurance (COI) naming Z Gallerie Home LLC as additional insured required before first dispatch.</li>'
+    +'    <li><b>Load Tender:</b> Rate confirmation must be acknowledged within 2 business hours of tender. Failure to confirm may result in re-tendering per standard broker-carrier practices.</li>'
+    +'    <li><b>HOS Compliance:</b> All drivers must comply with FMCSA Hours of Service regulations per 49 CFR § 395. Violations may result in immediate disqualification of carrier.</li>'
+    +'    <li><b>Cargo Claims:</b> Claims must be filed within 9 months of delivery per 49 U.S.C. § 14706 (Carmack Amendment). Z Gallerie will not accept claims filed after this statutory period.</li>'
+    +'    <li><b>Payment:</b> Net 30 days from receipt of signed Proof of Delivery (POD) and valid invoice. Invoice must reference the BOL number and this RFQ reference number.</li>'
+    +'    <li><b>Rate Validity:</b> Quoted rates are valid for 30 calendar days from the issue date of this RFQ.</li>'
+    +'    <li><b>Right to Award:</b> Z Gallerie reserves the sole right to award, split, or withdraw any lane without penalty.</li>'
+    +'    <li><b>Governing Law:</b> This agreement shall be governed by the laws of the State of California. Disputes subject to binding arbitration per AAA Commercial Rules.</li>'
+    +'    <li><b>Non-Disclosure:</b> Carrier agrees to keep all freight rates, volumes, and lane information strictly confidential per applicable trade secret laws.</li>'
+    +'  </ol>'
+    +'</div>'
+
+    // ── Signature ──
+    +'<div class="section">'
+    +'  <div class="section-title">Authorization &amp; Signature</div>'
+    +'  <div class="sig-grid">'
+    +'    <div class="sig-box">'
+    +'      <div class="sig-box-title">Carrier Authorized Representative</div>'
+    +'      <div class="sig-line"></div><div class="sig-line-label">Signature</div>'
+    +'      <div style="height:10px"></div>'
+    +'      <div class="sig-line"></div><div class="sig-line-label">Printed Name &amp; Title</div>'
+    +'      <div style="height:10px"></div>'
+    +'      <div class="sig-line"></div><div class="sig-line-label">Date</div>'
+    +'    </div>'
+    +'    <div class="sig-box">'
+    +'      <div class="sig-box-title">Z Gallerie Logistics (Internal Use)</div>'
+    +'      <div class="sig-line"></div><div class="sig-line-label">Accepted by</div>'
+    +'      <div style="height:10px"></div>'
+    +'      <div class="sig-line"></div><div class="sig-line-label">Rate Confirmed ($____/mi · Total $________)</div>'
+    +'      <div style="height:10px"></div>'
+    +'      <div class="sig-line"></div><div class="sig-line-label">Confirmation Date</div>'
+    +'    </div>'
+    +'  </div>'
+    +'</div>'
+
+    // ── Footer ──
+    +'<div class="footer">'
+    +'  <span>Z Gallerie Home LLC · 1855 W 139th St, Gardena CA 90249 · zgallerie.com</span>'
+    +'  <span>'+refNo+' · Page 1 of 1 · Confidential</span>'
+    +'</div>'
+
+    +'</div>'  // .page
+
+    // Print button (only on screen)
+    +'<div class="no-print" style="text-align:center;padding:20px;font-family:Arial">'
+    +'  <button onclick="window.print()" style="background:#1F3864;color:#fff;border:none;padding:10px 28px;font-size:14px;border-radius:5px;cursor:pointer;margin-right:10px">🖨 Print / Save as PDF</button>'
+    +'  <button onclick="window.close()" style="background:#6B7280;color:#fff;border:none;padding:10px 20px;font-size:14px;border-radius:5px;cursor:pointer">Close</button>'
+    +'</div>'
+
+    +'</'+'body></'+'html>';
+
+  exportRFQ_iframe(printHTML);
+}
+
+function rfqPrint() {
+  // legacy — no longer used (popup window handles its own print button)
+}
+
+function rfqClose() {
+  // legacy — popup window handles its own close button
+}
+
+function exportRFQ_iframe(content) {
+  // Use window.open + document.write to avoid file:// iframe security restrictions
+  var win = window.open('', '_blank', 'width=900,height=720');
+  if (!win) { alert('Please allow popups for this page to preview the RFQ.'); return; }
+  win.document.write(content);
+  win.document.close();
+  win.focus();
+}
+
+// ── Carrier Quote System ──────────────────────────────────────────────────────
+var _carrierQuotes = {};  // { truckId: [ {carrier, mc, rate, total, ...}, ... ] }
+var _qeTruckId = null;
+
+function openQuoteEntry(truckId) {
+  _qeTruckId = +truckId;
+  var t = TRUCKS.find(function(x){return x.id===_qeTruckId;});
+  if (!t) return;
+  document.getElementById('qe-truck-label').textContent =
+    'Truck #' + t.id + ' \u00b7 ' + t.corridor + ' \u00b7 ' + t.miles.toLocaleString() + ' mi';
+  // Clear fields
+  ['qe-carrier','qe-mc','qe-contact','qe-phone','qe-rate','qe-notes','qe-confirmed-by'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('qe-total').value = '';
+  document.getElementById('qe-avail').value = 'Y';
+  document.getElementById('qe-decision').value = '';
+  var today = new Date().toISOString().slice(0,10);
+  document.getElementById('qe-pickup').value = today;
+  document.getElementById('quote-entry-modal').classList.remove('hidden');
+}
+
+function openQuoteEntryFromList() {
+  document.getElementById('quotes-list-modal').classList.add('hidden');
+  openQuoteEntry(_qeTruckId);
+}
+
+function calcQuoteTotal() {
+  var t = TRUCKS.find(function(x){return x.id===_qeTruckId;});
+  if (!t) return;
+  var rate = parseFloat(document.getElementById('qe-rate').value) || 0;
+  var total = rate * t.miles;
+  document.getElementById('qe-total').value = total > 0 ? '$' + total.toFixed(2) : '';
+}
+
+function saveCarrierQuote() {
+  var rate = parseFloat(document.getElementById('qe-rate').value);
+  if (!rate || rate <= 0) { alert('Please enter a valid rate ($/mi).'); return; }
+  var carrier = document.getElementById('qe-carrier').value.trim();
+  if (!carrier) { alert('Please enter carrier name.'); return; }
+
+  var t = TRUCKS.find(function(x){return x.id===_qeTruckId;});
+  var total = rate * (t ? t.miles : 0);
+
+  var quote = {
+    id:          Date.now(),
+    truckId:     _qeTruckId,
+    carrier:     carrier,
+    mc:          document.getElementById('qe-mc').value,
+    contact:     document.getElementById('qe-contact').value,
+    phone:       document.getElementById('qe-phone').value,
+    rate:        rate,
+    total:       total,
+    avail:       document.getElementById('qe-avail').value,
+    pickup:      document.getElementById('qe-pickup').value,
+    notes:       document.getElementById('qe-notes').value,
+    decision:    document.getElementById('qe-decision').value,
+    confirmedBy: document.getElementById('qe-confirmed-by').value,
+    savedAt:     new Date().toLocaleString(),
+  };
+
+  if (!_carrierQuotes[_qeTruckId]) _carrierQuotes[_qeTruckId] = [];
+  _carrierQuotes[_qeTruckId].push(quote);
+
+  document.getElementById('quote-entry-modal').classList.add('hidden');
+  showQuotesList(_qeTruckId);
+  updateRFQButtonState(_qeTruckId);
+}
+
+function showQuotesList(truckId) {
+  truckId = +truckId;
+  _qeTruckId = +truckId;
+  var t = TRUCKS.find(function(x){return x.id===truckId;});
+  var quotes = _carrierQuotes[truckId] || [];
+  document.getElementById('ql-truck-label').textContent =
+    'Truck #' + truckId + ' \u00b7 ' + (t ? t.corridor : '') + ' \u00b7 ' + quotes.length + ' quote(s)';
+
+  if (quotes.length === 0) {
+    document.getElementById('quotes-list-content').innerHTML =
+      '<div style="text-align:center;padding:30px;color:var(--t3)">No quotes entered yet. Click Add Quote to start.</div>';
+  } else {
+    // Sort by rate ascending
+    var sorted = quotes.slice().sort(function(a,b){return a.rate-b.rate;});
+    var rows = sorted.map(function(q,i) {
+      var isLowest = i===0;
+      var decColor = q.decision==='Awarded'?'var(--success-t)':q.decision==='Rejected'?'var(--danger-t)':'var(--warn-t)';
+      return '<div style="background:'+(isLowest?'var(--success-bg)':'var(--bg3)')+';border:1px solid '+(isLowest?'var(--success)':'var(--b1)')+';border-radius:var(--rad-lg);padding:12px 16px;margin-bottom:8px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
+        +'<div>'
+        +'<div style="font-size:13px;font-weight:700;color:var(--t1)">'+q.carrier+(isLowest?'  <span style="font-size:10px;background:var(--success);color:#000;padding:1px 7px;border-radius:8px;font-weight:700">LOWEST</span>':'')+'</div>'
+        +'<div style="font-size:11px;color:var(--t3);margin-top:2px">MC: '+q.mc+'  \u00b7  '+q.contact+'  \u00b7  '+q.phone+'</div>'
+        +'</div>'
+        +'<div style="text-align:right">'
+        +'<div style="font-size:20px;font-weight:700;color:'+(isLowest?'var(--success-t)':'var(--warn-t)')+'">$'+q.rate.toFixed(2)+'/mi</div>'
+        +'<div style="font-size:12px;color:var(--t2)">Total: $'+q.total.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,",")+'</div>'
+        +'</div>'
+        +'</div>'
+        +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:11px;color:var(--t2);margin-bottom:8px">'
+        +'<span><b style="color:var(--t3)">Avail:</b> '+q.avail+'</span>'
+        +'<span><b style="color:var(--t3)">Pickup:</b> '+q.pickup+'</span>'
+        +'<span><b style="color:var(--t3)">Saved:</b> '+q.savedAt+'</span>'
+        +'<span><b style="color:var(--t3)">Notes:</b> '+(q.notes||'—')+'</span>'
+        +'</div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:center">'
+        +'<div>'
+        +(q.decision?'<span style="font-size:11px;font-weight:600;color:'+decColor+'">'+q.decision+'</span>'
+          +(q.confirmedBy?' <span style="color:var(--t3);font-size:10px">by '+q.confirmedBy+'</span>':'')
+          :'<span style="font-size:11px;color:var(--t4)">Pending decision</span>')
+        +'</div>'
+        +'<div style="display:flex;gap:6px">'
+        +'<select title="Award Decision" aria-label="Award Decision" onchange="updateQuoteDecision('+q.id+','+truckId+',this.value)" style="font-size:11px;padding:3px 6px">'
+        +'<option value="">Update decision...</option>'
+        +'<option value="Awarded">✅ Award</option>'
+        +'<option value="Rejected">❌ Reject</option>'
+        +'<option value="Backup">⭐ Backup</option>'
+        +'</select>'
+        +'<button onclick="deleteQuote('+q.id+','+truckId+')" style="background:none;border:1px solid var(--danger-t);color:var(--danger-t);border-radius:4px;padding:3px 8px;cursor:pointer;font-size:11px">Del</button>'
+        +'</div>'
+        +'</div>'
+        +'</div>';
+    }).join('');
+    document.getElementById('quotes-list-content').innerHTML = rows;
+  }
+  document.getElementById('quotes-list-modal').classList.remove('hidden');
+}
+
+function updateQuoteDecision(quoteId, truckId, decision) {
+  if (!decision) return;
+  var quotes = _carrierQuotes[truckId] || [];
+  var q = quotes.find(function(x){return x.id===quoteId;});
+  if (q) { q.decision = decision; showQuotesList(truckId); }
+}
+
+function deleteQuote(quoteId, truckId) {
+  if (!confirm('Delete this quote?')) return;
+  _carrierQuotes[truckId] = (_carrierQuotes[truckId]||[]).filter(function(x){return x.id!==quoteId;});
+  showQuotesList(truckId);
+  updateRFQButtonState(truckId);
+}
+
+function updateRFQButtonState(truckId) {
+  // Update the "Enter Carrier Quote" button to show quote count
+  var quotes = _carrierQuotes[truckId] || [];
+  // Find button in DOM — it's rendered dynamically so update via re-render or badge
+  // Simple: rebuild route to refresh (or just update button text if visible)
+  var routeDiv = document.getElementById('route-content');
+  if (routeDiv && routeDiv.innerHTML.includes('openQuoteEntry('+truckId+')')) {
+    buildRoute(truckId);
+  }
+}
+
+function exportQuotesCSV() {
+  var truckId = _qeTruckId;
+  var t = TRUCKS.find(function(x){return x.id===truckId;});
+  var quotes = _carrierQuotes[truckId] || [];
+  if (!quotes.length) { alert('No quotes to export.'); return; }
+
+  var headers = ['Truck#','Corridor','Miles','Carrier','MC#','Contact','Phone',
+                 'Rate($/mi)','Total Bid($)','Availability','Earliest Pickup',
+                 'Decision','Confirmed By','Notes','Saved At'];
+  var rows = [headers.join(',')];
+  quotes.forEach(function(q) {
+    rows.push([
+      'T'+String(truckId).padStart(2,'0'),
+      '"'+(t?t.corridor:'')+'"',
+      t?t.miles:0,
+      '"'+q.carrier+'"', q.mc,
+      '"'+q.contact+'"', q.phone,
+      q.rate, q.total.toFixed(2),
+      q.avail, q.pickup,
+      q.decision||'Pending',
+      '"'+q.confirmedBy+'"',
+      '"'+(q.notes||'')+'"',
+      '"'+q.savedAt+'"',
+    ].join(','));
+  });
+
+  var blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8;'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href   = url;
+  a.download = 'ZG_Quotes_T'+String(truckId).padStart(2,'0')+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 </script>
+
 </body>
 </html>
